@@ -59,12 +59,12 @@ def fig1_design():
         ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="->",
                                      mutation_scale=8, lw=0.8, color="k"))
 
-    box(0.1, 3.55, 2.2, 1.05, "9 design problems\nverified against\npublished optima")
+    box(0.1, 3.55, 2.2, 1.05, "8 design problems\nverified against\npublished optima")
     box(0.1, 2.00, 2.2, 1.05, "11 algorithms\n6 metaphor-based\n5 baselines")
     box(0.1, 0.45, 2.2, 1.05, "3 constraint\nschemes: Deb,\nstatic, $\\epsilon$")
     box(3.05, 2.70, 2.1, 1.05, "matched-budget\ntuning on 3\ntraining problems")
     box(3.05, 1.15, 2.1, 1.05, "author-default\nhyperparameters")
-    box(5.95, 1.60, 1.9, 1.85, "25 seeded runs\n15,000 evaluations\nshared evaluator\nseeds paired\nacross algorithms")
+    box(5.95, 1.60, 1.9, 1.85, "51 seeded runs\n15,000 evaluations\nshared evaluator\nseeds paired\nacross algorithms")
     box(8.30, 1.60, 1.6, 1.85, "Friedman\n+ Nemenyi\n\nWilcoxon\n+ Holm\n\n$\\hat{A}_{12}$")
     for y in (4.07, 2.52, 0.97):
         arrow(2.32, y, 3.00, 3.05 if y > 3.5 else (2.20 if y < 1.5 else 2.60))
@@ -100,15 +100,37 @@ def fig2_cd(ranks, cd):
     ax.text(lo - cd / 2, top + 0.68, f"critical difference = {cd:.2f}",
             ha="center", va="bottom", fontsize=8)
 
-    for i, (nm, v) in enumerate(zip(names, vals)):
-        left = i < half
-        y = top - row_h * ((i if left else i - half) + 1)
-        x_end = (lo - 0.10) if left else (hi + 0.10)
-        ax.plot([v, v], [top, y], color="k", lw=0.7)
-        ax.plot([v, x_end], [y, y], color="k", lw=0.7)
-        ax.text(x_end - 0.06 if left else x_end + 0.06, y,
-                f"{nm} ({v:.2f})", ha="right" if left else "left",
-                va="center", fontsize=8)
+    # Row order must keep each connector's leader line clear of every other
+    # row's text. The label margin for the "left" (best-rank) group sits
+    # below the group's minimum value, so the shallowest row must hold the
+    # smallest value (ascending). The margin for the "right" (worst-rank)
+    # group sits above the group's maximum value, so it must be reversed
+    # (descending) or every deeper row's leader line crosses the shallower
+    # rows' text on its way out to the margin.
+    left_group = sorted(range(half), key=lambda i: vals[i])
+    right_group = sorted(range(half, len(names)), key=lambda i: -vals[i])
+
+    # Screen-space (points) offset from the leader line's endpoint, so the
+    # gap is unaffected by the reversed, non-uniform x/y data scaling.
+    for slot, i in enumerate(left_group):
+        nm, v = names[i], vals[i]
+        y = top - row_h * (slot + 1)
+        x_end = lo - 0.10
+        # single diagonal leader: touches the text zone only at its own row,
+        # so it cannot cross through another row's label text.
+        ax.plot([v, x_end], [top, y], color="k", lw=0.7)
+        ax.annotate(f"{nm} ({v:.2f})", xy=(x_end, y), xycoords="data",
+                    xytext=(-6, 0), textcoords="offset points",
+                    ha="right", va="center", fontsize=8)
+
+    for slot, i in enumerate(right_group):
+        nm, v = names[i], vals[i]
+        y = top - row_h * (slot + 1)
+        x_end = hi + 0.10
+        ax.plot([v, x_end], [top, y], color="k", lw=0.7)
+        ax.annotate(f"{nm} ({v:.2f})", xy=(x_end, y), xycoords="data",
+                    xytext=(6, 0), textcoords="offset points",
+                    ha="left", va="center", fontsize=8)
     save(fig, "fig2_critical_difference")
 
 

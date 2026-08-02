@@ -43,12 +43,12 @@ def box(x, y, w, h, t, fs=7.5):
 def arrow(x1, y1, x2, y2):
     ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="->",
                  mutation_scale=9, lw=0.8, color="k"))
-box(0.1, 3.5, 2.3, 1.1, "9 design problems\nverified against\npublished optima")
+box(0.1, 3.5, 2.3, 1.1, "8 design problems\nverified against\npublished optima")
 box(0.1, 1.9, 2.3, 1.1, "11 algorithms\n6 metaphor-based\n5 baselines")
 box(0.1, 0.3, 2.3, 1.1, "3 constraint\nschemes: Deb,\nstatic, $\\epsilon$")
 box(3.1, 2.6, 2.2, 1.1, "matched-budget\ntuning\n(3 training problems)")
 box(3.1, 1.0, 2.2, 1.1, "author-default\nhyperparameters")
-box(6.0, 1.8, 1.9, 1.9, "25 seeded runs\n15,000 FEs\nshared evaluator\npaired seeds")
+box(6.0, 1.8, 1.9, 1.9, "51 seeded runs\n15,000 FEs\nshared evaluator\npaired seeds")
 box(8.4, 1.8, 1.5, 1.9, "Friedman\n+ Nemenyi\nWilcoxon\n+ Holm\n$\\hat{A}_{12}$")
 for y in (4.05, 2.45, 0.85): arrow(2.4, y, 3.05, 2.2 if y != 1.55 else y)
 arrow(5.3, 3.15, 5.95, 2.9); arrow(5.3, 1.55, 5.95, 2.3); arrow(7.9, 2.75, 8.35, 2.75)
