@@ -1,13 +1,29 @@
 # Budget-Controlled Reproduction Study of Nature-Inspired Metaheuristics
 
+[![Author](https://img.shields.io/badge/author-Prakash%20Ukhalkar-blue?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
+[![ORCID](https://img.shields.io/badge/ORCID-0000--0002--0452--6574-a6ce39?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
+[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-pre--submission-yellow)
+![Venue](https://img.shields.io/badge/venue-Engineering%20Research%20Express-lightgrey)
+![Last commit](https://img.shields.io/github/last-commit/prakash-ukhalkar/metaheuristic-budget-reproduction)
+![Repo size](https://img.shields.io/github/repo-size/prakash-ukhalkar/metaheuristic-budget-reproduction)
+
+![Metaphor-based algorithms](https://img.shields.io/badge/metaphor--based-GWO%20%7C%20WOA%20%7C%20SCA%20%7C%20SSA%20%7C%20HHO%20%7C%20AOA-orange)
+![Baselines](https://img.shields.io/badge/baselines-DE%20%7C%20PSO%20%7C%20L--SHADE%20%7C%20CMA--ES%20%7C%20RS-teal)
+![Problems](https://img.shields.io/badge/problems-8%20constrained%20engineering%20design-9cf)
+![Runs](https://img.shields.io/badge/runs-51%20seeded%20per%20pair-9cf)
+![Budget](https://img.shields.io/badge/eval%20budget-5k%20%7C%2015k%20%7C%2050k%20FEs-9cf)
 
 A reproduction study comparing six metaphor-based metaheuristics against five established
 baselines on constrained engineering design problems, under matched evaluation budgets, matched
 tuning effort, and identical constraint handling. Target venue: **Engineering Research Express**
 (IOP Publishing).
+
+**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
+— Pimpri Chinchwad College of Engineering, Pune, India.
 
 ## Contents
 
@@ -158,3 +174,12 @@ cite this repository directly.
 ## License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
+— Pimpri Chinchwad College of Engineering, Pune, India
+
+[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![ORCID](https://img.shields.io/badge/ORCID-0000--0002--0452--6574-a6ce39?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
