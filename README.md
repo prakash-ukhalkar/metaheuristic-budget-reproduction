@@ -6,10 +6,6 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Status](https://img.shields.io/badge/status-pre--submission-yellow)
-![Venue](https://img.shields.io/badge/venue-Engineering%20Research%20Express-lightgrey)
-![Last commit](https://img.shields.io/github/last-commit/prakash-ukhalkar/metaheuristic-budget-reproduction)
-![Repo size](https://img.shields.io/github/repo-size/prakash-ukhalkar/metaheuristic-budget-reproduction)
 
 ![Metaphor-based algorithms](https://img.shields.io/badge/metaphor--based-GWO%20%7C%20WOA%20%7C%20SCA%20%7C%20SSA%20%7C%20HHO%20%7C%20AOA-orange)
 ![Baselines](https://img.shields.io/badge/baselines-DE%20%7C%20PSO%20%7C%20L--SHADE%20%7C%20CMA--ES%20%7C%20RS-teal)
@@ -19,8 +15,7 @@
 
 A reproduction study comparing six metaphor-based metaheuristics against five established
 baselines on constrained engineering design problems, under matched evaluation budgets, matched
-tuning effort, and identical constraint handling. Target venue: **Engineering Research Express**
-(IOP Publishing).
+tuning effort, and identical constraint handling.
 
 **Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
 — Pimpri Chinchwad College of Engineering, Pune, India.
