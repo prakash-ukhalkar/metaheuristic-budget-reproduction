@@ -150,27 +150,6 @@ availability statement.
 published optimum are found readily, indicating the formulation as commonly circulated is
 under-constrained (manuscript Section 4.6).
 
-**Remaining before submission**:
-1. Complete 8 unverified reference identifiers with `src/verify_references.py` (Crossref was
-   unreachable from the build environment used for the last pass). 19 references are verified
-   and embedded; Holm (1979) has no DOI and is cited by JSTOR stable URL; Demsar (2006) and
-   García & Herrera (2008) are open-access JMLR papers cited by URL.
-2. Archive the repository on Zenodo and insert the DOI in the data availability statement.
-3. Pre-register the analysis plan (OSF) before the final confirmatory run.
-4. Visual inspection of figures 2 and 7 (generated and structurally checked, not yet eyeballed).
-5. Complete the Acknowledgements: affiliations, conflict-of-interest disclosure, funding.
-
-Open-access routes for paywalled references used during verification:
-
-| Reference | Open-access route |
-|---|---|
-| Demšar 2006; García & Herrera 2008 | Fully open at jmlr.org |
-| López-Ibáñez 2016 (irace) | *Operations Research Perspectives* is open access |
-| Bartz-Beielstein 2020 | arXiv:2007.03488 |
-| Hansen et al. (COCO) | arXiv:1603.08785 |
-| Kudela 2023 (companion paper) | arXiv:2301.01984 |
-| Elsevier / Wiley algorithm papers | Author copies widely posted; verify via institutional repository before citing an inaccessible version |
-
 ## Citation
 
 See [CITATION.cff](CITATION.cff). Please cite the associated article once published; until then,
