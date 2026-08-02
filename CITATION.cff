@@ -4,10 +4,7 @@ title: >-
 message: If you use this software or data, please cite the associated article.
 type: software
 authors:
-  - given-names: Prakash
-    family-names: Ukhalkar
-    affiliation: Pimpri Chinchwad College of Engineering, Pune, India
-    orcid: https://orcid.org/0000-0002-0452-6574
+  - name: "Anonymous"
 abstract: >-
   Problem suite, algorithm implementations, experiment driver, statistical
   analysis and complete raw results for a budget-controlled reproduction study

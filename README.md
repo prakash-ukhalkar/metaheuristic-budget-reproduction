@@ -1,7 +1,5 @@
 # Budget-Controlled Reproduction Study of Nature-Inspired Metaheuristics
 
-[![Author](https://img.shields.io/badge/author-Prakash%20Ukhalkar-blue?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
-[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Metaphor-based algorithms](https://img.shields.io/badge/metaphor--based-GWO%20%7C%20WOA%20%7C%20SCA%20%7C%20SSA%20%7C%20HHO%20%7C%20AOA-orange)
@@ -14,8 +12,8 @@ A reproduction study comparing six metaphor-based metaheuristics against five es
 baselines on constrained engineering design problems, under matched evaluation budgets, matched
 tuning effort, and identical constraint handling.
 
-**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
-— Pimpri Chinchwad College of Engineering, Pune, India.
+> This repository is presented in anonymized form for double-blind peer review. Author
+> identity, affiliation, and institutional links have been withheld from this branch.
 
 ## Contents
 
@@ -160,8 +158,8 @@ under-constrained (manuscript Section 4.6).
 
 ## Citation
 
-See [CITATION.cff](CITATION.cff). Please cite the associated article once published; until then,
-cite this repository directly.
+See [CITATION.cff](CITATION.cff). Author details are withheld from this anonymized branch;
+the full citation will be added once review is complete.
 
 ## License
 
@@ -169,9 +167,5 @@ Released under the [MIT License](LICENSE).
 
 ---
 
-**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
-— Pimpri Chinchwad College of Engineering, Pune, India
-
-[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![ORCID](https://img.shields.io/badge/ORCID-0000--0002--0452--6574-a6ce39?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
+*This branch is an anonymized copy of the repository prepared for double-blind peer review.
+Author name, ORCID, affiliation, and repository/account links have been removed.*
