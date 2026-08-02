@@ -1,0 +1,352 @@
+[
+  {
+    "alg": "GWO",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.0001067917149180194
+  },
+  {
+    "alg": "GWO",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.0005216768169217746
+  },
+  {
+    "alg": "GWO",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.01059359367564911
+  },
+  {
+    "alg": "GWO",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.024992054205433933
+  },
+  {
+    "alg": "GWO",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.024820592051296293
+  },
+  {
+    "alg": "WOA",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 6.158871818073075e-05
+  },
+  {
+    "alg": "WOA",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.03761304519295735
+  },
+  {
+    "alg": "WOA",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.042914096480501755
+  },
+  {
+    "alg": "WOA",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.04988465898542104
+  },
+  {
+    "alg": "WOA",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.05630308990043988
+  },
+  {
+    "alg": "SCA",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.05631063491117209
+  },
+  {
+    "alg": "SCA",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.09991709483775864
+  },
+  {
+    "alg": "SCA",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.08936383009903942
+  },
+  {
+    "alg": "SCA",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.14447175979832663
+  },
+  {
+    "alg": "SCA",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.15070841917897757
+  },
+  {
+    "alg": "SSA",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.020746660375270624
+  },
+  {
+    "alg": "SSA",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.04118744498178884
+  },
+  {
+    "alg": "SSA",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.08672367800289242
+  },
+  {
+    "alg": "SSA",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.08321176554055458
+  },
+  {
+    "alg": "SSA",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.069384571465918
+  },
+  {
+    "alg": "HHO",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.06820474038206435
+  },
+  {
+    "alg": "HHO",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.1422721229336868
+  },
+  {
+    "alg": "HHO",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.23766878344190498
+  },
+  {
+    "alg": "HHO",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.3077814844690181
+  },
+  {
+    "alg": "HHO",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.15138178974679503
+  },
+  {
+    "alg": "AOA",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.04009354090571256
+  },
+  {
+    "alg": "AOA",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.04931276794219893
+  },
+  {
+    "alg": "AOA",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.14191394059943538
+  },
+  {
+    "alg": "AOA",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.27435466108733503
+  },
+  {
+    "alg": "AOA",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.20972805740616696
+  },
+  {
+    "alg": "DE",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.0006793921105991608
+  },
+  {
+    "alg": "DE",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.0003625113668533681
+  },
+  {
+    "alg": "DE",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.0006793663984175812
+  },
+  {
+    "alg": "DE",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.000992044222732937
+  },
+  {
+    "alg": "DE",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.000827569065339379
+  },
+  {
+    "alg": "PSO",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 0.0006806846549937091
+  },
+  {
+    "alg": "PSO",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.00626594791949858
+  },
+  {
+    "alg": "PSO",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.024001066689967303
+  },
+  {
+    "alg": "PSO",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.026262271187913938
+  },
+  {
+    "alg": "PSO",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.047823266051497004
+  },
+  {
+    "alg": "LSHADE",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 1.5768554958354104e-07
+  },
+  {
+    "alg": "LSHADE",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 1.9704995970261697e-07
+  },
+  {
+    "alg": "LSHADE",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.0001703421217865886
+  },
+  {
+    "alg": "LSHADE",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.00017010088945108477
+  },
+  {
+    "alg": "LSHADE",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.00038210350412499995
+  },
+  {
+    "alg": "CMAES",
+    "round": 0,
+    "n_configs": 32,
+    "seeds": 1,
+    "best_score": 3.125678509655091e-07
+  },
+  {
+    "alg": "CMAES",
+    "round": 1,
+    "n_configs": 16,
+    "seeds": 2,
+    "best_score": 0.016537673452482745
+  },
+  {
+    "alg": "CMAES",
+    "round": 2,
+    "n_configs": 8,
+    "seeds": 4,
+    "best_score": 0.020187095659970948
+  },
+  {
+    "alg": "CMAES",
+    "round": 3,
+    "n_configs": 4,
+    "seeds": 8,
+    "best_score": 0.03272395680243805
+  },
+  {
+    "alg": "CMAES",
+    "round": 4,
+    "n_configs": 2,
+    "seeds": 8,
+    "best_score": 0.025872694112886008
+  }
+]

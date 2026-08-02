@@ -1,0 +1,434 @@
+[
+ {
+  "problem": "PressureVessel",
+  "algorithm": "GWO",
+  "median_this_study": 6091.783342281302,
+  "median_reference": 6503.628484824092,
+  "rel_diff": 0.06332544109858232,
+  "p_ranksum": 0.0007775304469403846,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "PressureVessel",
+  "algorithm": "WOA",
+  "median_this_study": 6410.321809955377,
+  "median_reference": 16378.014535291237,
+  "rel_diff": 0.6086020197294086,
+  "p_ranksum": 0.0016291862969701565,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "GWO",
+  "median_this_study": 0.012747706803632953,
+  "median_reference": 0.013201099573284063,
+  "rel_diff": 0.03434507611537689,
+  "p_ranksum": 0.011848940928347476,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "WOA",
+  "median_this_study": 0.012759092520561809,
+  "median_reference": 0.013679641651722389,
+  "rel_diff": 0.06729336590806638,
+  "p_ranksum": 0.4015419876158449,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "GWO",
+  "median_this_study": 1.7277670590989147,
+  "median_reference": 1.825154241323495,
+  "rel_diff": 0.05335832995350614,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "WOA",
+  "median_this_study": 1.7277106949836045,
+  "median_reference": 3.9982787549462424,
+  "rel_diff": 0.5678863828975742,
+  "p_ranksum": 0.0007775304469403846,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "GWO",
+  "median_this_study": 3006.4507628900374,
+  "median_reference": 3100.4160163075917,
+  "rel_diff": 0.030307304865964814,
+  "p_ranksum": 0.0007775304469403846,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "WOA",
+  "median_this_study": 3006.6622043293437,
+  "median_reference": 3404.8472959170767,
+  "rel_diff": 0.11694653444964088,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "GWO",
+  "median_this_study": 263.9022152155867,
+  "median_reference": 263.97387122488027,
+  "rel_diff": 0.0002714511438616306,
+  "p_ranksum": 0.0009285334224661572,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "WOA",
+  "median_this_study": 263.90006271737775,
+  "median_reference": 264.8170451326497,
+  "rel_diff": 0.003462701635435209,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "GWO",
+  "median_this_study": 1.3400444892820584,
+  "median_reference": 1.3575259208336972,
+  "rel_diff": 0.012877420079686477,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "WOA",
+  "median_this_study": 1.3401453270051513,
+  "median_reference": 4.666756239227703,
+  "rel_diff": 0.7128315133024966,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "GWO",
+  "median_this_study": 6.602089880205836e-10,
+  "median_reference": 1.3616491390639914e-09,
+  "rel_diff": 0.5151401568289342,
+  "p_ranksum": 0.046944726978481795,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "WOA",
+  "median_this_study": 9.921579583985335e-10,
+  "median_reference": 3.6358329757156406e-09,
+  "rel_diff": 0.727116739128192,
+  "p_ranksum": 0.2332302227821852,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "GWO",
+  "median_this_study": 0.013074842484141617,
+  "median_reference": 0.01308018383475954,
+  "rel_diff": 0.000408354399708692,
+  "p_ranksum": 0.0004867660221606486,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "WOA",
+  "median_this_study": 0.01307411918570259,
+  "median_reference": 0.015114075176332939,
+  "rel_diff": 0.13497061294393362,
+  "p_ranksum": NaN,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "PressureVessel",
+  "algorithm": "SCA",
+  "median_this_study": 7039.676531947777,
+  "median_reference": 6981.34822073268,
+  "rel_diff": 0.008354877793071333,
+  "p_ranksum": 0.34456236532569795,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "PressureVessel",
+  "algorithm": "SSA",
+  "median_this_study": 6570.1425811888,
+  "median_reference": 7149.992337038149,
+  "rel_diff": 0.08109795486711656,
+  "p_ranksum": 0.07420341132975512,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "SCA",
+  "median_this_study": 0.013198326501656666,
+  "median_reference": 0.01365479349050797,
+  "rel_diff": 0.03342906571004633,
+  "p_ranksum": 0.005410533856084873,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "SSA",
+  "median_this_study": 0.013183858373297882,
+  "median_reference": 0.014368372892147702,
+  "rel_diff": 0.08243901572857674,
+  "p_ranksum": 0.011848940928347476,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "SCA",
+  "median_this_study": 1.8793298778889358,
+  "median_reference": 1.9088962855482843,
+  "rel_diff": 0.01548874492720606,
+  "p_ranksum": 0.07026567343786638,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "SSA",
+  "median_this_study": 2.0092106059298387,
+  "median_reference": 2.295923351695308,
+  "rel_diff": 0.12487905815921989,
+  "p_ranksum": 0.03797720355552732,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "SCA",
+  "median_this_study": 3180.5300518684307,
+  "median_reference": 3187.6833474792074,
+  "rel_diff": 0.002244042092961793,
+  "p_ranksum": 0.9163591402734885,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "SSA",
+  "median_this_study": 3037.9668971155265,
+  "median_reference": 3085.012166937926,
+  "rel_diff": 0.015249622133288012,
+  "p_ranksum": 0.1023449884992148,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "SCA",
+  "median_this_study": 264.1500457429957,
+  "median_reference": 263.9828830536366,
+  "rel_diff": 0.0006332330620282067,
+  "p_ranksum": 0.030510208580440113,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "SSA",
+  "median_this_study": 263.8984597208443,
+  "median_reference": 264.0406728280772,
+  "rel_diff": 0.0005386030330467969,
+  "p_ranksum": 0.0030951933102600876,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "SCA",
+  "median_this_study": 1.4210418450759141,
+  "median_reference": 1.417182877524071,
+  "rel_diff": 0.0027229848829285505,
+  "p_ranksum": 0.30987954963977293,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "SSA",
+  "median_this_study": 1.3400079886368113,
+  "median_reference": 2.263466482301377,
+  "rel_diff": 0.40798416980561614,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "SCA",
+  "median_this_study": 2.3576406580248844e-09,
+  "median_reference": 2.3576406580248844e-09,
+  "rel_diff": 0.0,
+  "p_ranksum": 0.2332302227821852,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "SSA",
+  "median_this_study": 9.921579583985335e-10,
+  "median_reference": 9.520865654771031e-09,
+  "rel_diff": 0.8957912027777275,
+  "p_ranksum": 0.331387096247615,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "SCA",
+  "median_this_study": 0.01312045703024378,
+  "median_reference": 0.013967466909375066,
+  "rel_diff": 0.060641624184752274,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "SSA",
+  "median_this_study": 0.013092667272895533,
+  "median_reference": 0.014468077142687694,
+  "rel_diff": 0.0950651462684042,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15021.0
+ },
+ {
+  "problem": "PressureVessel",
+  "algorithm": "HHO",
+  "median_this_study": 7826.121225639974,
+  "median_reference": 7462.192734870063,
+  "rel_diff": 0.04876964502260985,
+  "p_ranksum": 0.8336348830246822,
+  "mean_nfe_reference": 15013.111111111111
+ },
+ {
+  "problem": "PressureVessel",
+  "algorithm": "AOA",
+  "median_this_study": 6266.985349283275,
+  "median_reference": 43207.620432950695,
+  "rel_diff": 0.8549564802114399,
+  "p_ranksum": 0.009023438818080326,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "HHO",
+  "median_this_study": 0.01401902835198619,
+  "median_reference": 0.013565605514184113,
+  "rel_diff": 0.03342444517703099,
+  "p_ranksum": 0.7572777496236212,
+  "mean_nfe_reference": 15027.777777777777
+ },
+ {
+  "problem": "TensionSpring",
+  "algorithm": "AOA",
+  "median_this_study": 0.013193985429557591,
+  "median_reference": 0.013482212333703527,
+  "rel_diff": 0.021378309213051894,
+  "p_ranksum": 0.0017201435751819092,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "HHO",
+  "median_this_study": 3.1984666488381963,
+  "median_reference": 3.414304539900628,
+  "rel_diff": 0.06321577016346461,
+  "p_ranksum": 0.2332302227821852,
+  "mean_nfe_reference": 15013.111111111111
+ },
+ {
+  "problem": "WeldedBeam",
+  "algorithm": "AOA",
+  "median_this_study": 2.139862684888598,
+  "median_reference": 2.481305910729593,
+  "rel_diff": 0.13760625981848332,
+  "p_ranksum": 0.006322947695810933,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "HHO",
+  "median_this_study": 3997.1837311279373,
+  "median_reference": 3780.0070075999615,
+  "rel_diff": 0.05745405315157544,
+  "p_ranksum": 0.7493941849625707,
+  "mean_nfe_reference": 15026.666666666666
+ },
+ {
+  "problem": "SpeedReducer",
+  "algorithm": "AOA",
+  "median_this_study": 3080.3293219879547,
+  "median_reference": 3363.87337961336,
+  "rel_diff": 0.08429094250212107,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "HHO",
+  "median_this_study": 264.61561006363763,
+  "median_reference": 264.73644248171075,
+  "rel_diff": 0.0004564253298125691,
+  "p_ranksum": 0.5659921481957874,
+  "mean_nfe_reference": 15019.111111111111
+ },
+ {
+  "problem": "ThreeBarTruss",
+  "algorithm": "AOA",
+  "median_this_study": 264.8930843263288,
+  "median_reference": 279.5040133204842,
+  "rel_diff": 0.052274487298335386,
+  "p_ranksum": 0.0004867660221606486,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "HHO",
+  "median_this_study": 1.6113125127935868,
+  "median_reference": 1.3586164941001222,
+  "rel_diff": 0.1859951058969275,
+  "p_ranksum": 0.0004867660221606486,
+  "mean_nfe_reference": 15021.111111111111
+ },
+ {
+  "problem": "CantileverBeam",
+  "algorithm": "AOA",
+  "median_this_study": 1.3452225336174937,
+  "median_reference": 7.616704019942599,
+  "rel_diff": 0.8233852162174956,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "HHO",
+  "median_this_study": 1.8273802352995788e-08,
+  "median_reference": 1.3616491390639914e-09,
+  "rel_diff": 12.420345835607362,
+  "p_ranksum": 0.145120357206937,
+  "mean_nfe_reference": 15013.111111111111
+ },
+ {
+  "problem": "GearTrain",
+  "algorithm": "AOA",
+  "median_this_study": 8.887614372714457e-10,
+  "median_reference": 3.272612505555662e-05,
+  "rel_diff": 0.9999728424481737,
+  "p_ranksum": 0.000348575174213053,
+  "mean_nfe_reference": 15000.0
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "HHO",
+  "median_this_study": 0.013734397822035534,
+  "median_reference": 0.015185819903705834,
+  "rel_diff": 0.09557745916083897,
+  "p_ranksum": NaN,
+  "mean_nfe_reference": 15013.111111111111
+ },
+ {
+  "problem": "IBeamDeflection",
+  "algorithm": "AOA",
+  "median_this_study": 0.013077875153677013,
+  "median_reference": 0.013913738218083362,
+  "rel_diff": 0.06007465796071953,
+  "p_ranksum": NaN,
+  "mean_nfe_reference": 15000.0
+ }
+]

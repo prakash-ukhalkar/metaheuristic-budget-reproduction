@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: >-
+  Nature-inspired metaheuristics under matched budgets: code and results
+message: If you use this software or data, please cite the associated article.
+type: software
+authors:
+  - given-names: FIRST
+    family-names: LAST
+    affiliation: YOUR INSTITUTION
+    orcid: https://orcid.org/0000-0000-0000-0000
+abstract: >-
+  Problem suite, algorithm implementations, experiment driver, statistical
+  analysis and complete raw results for a budget-controlled reproduction study
+  comparing six metaphor-based metaheuristics against five established
+  baselines on constrained engineering design problems.
+keywords:
+  - metaheuristics
+  - constrained optimisation
+  - benchmarking
+  - reproducibility
+license: MIT
+version: 1.0.0
+date-released: "2026-08-02"

@@ -1,0 +1,46 @@
+{
+ "GWO": {
+  "sec_per_run": 0.085,
+  "eval_per_sec": 176893
+ },
+ "WOA": {
+  "sec_per_run": 0.271,
+  "eval_per_sec": 55338
+ },
+ "SCA": {
+  "sec_per_run": 0.067,
+  "eval_per_sec": 223017
+ },
+ "SSA": {
+  "sec_per_run": 0.068,
+  "eval_per_sec": 221517
+ },
+ "HHO": {
+  "sec_per_run": 0.206,
+  "eval_per_sec": 72836
+ },
+ "AOA": {
+  "sec_per_run": 0.077,
+  "eval_per_sec": 195020
+ },
+ "DE": {
+  "sec_per_run": 0.19,
+  "eval_per_sec": 78855
+ },
+ "PSO": {
+  "sec_per_run": 0.054,
+  "eval_per_sec": 278419
+ },
+ "LSHADE": {
+  "sec_per_run": 0.173,
+  "eval_per_sec": 86551
+ },
+ "CMAES": {
+  "sec_per_run": 0.712,
+  "eval_per_sec": 21064
+ },
+ "RS": {
+  "sec_per_run": 0.022,
+  "eval_per_sec": 669858
+ }
+}
