@@ -95,9 +95,18 @@ def fig2_cd(ranks, cd):
         ax.vlines(tck, top, top + 0.07, color="k", lw=1.0)
         ax.text(tck, top + 0.13, f"{int(tck)}", ha="center", va="bottom", fontsize=8)
 
-    ax.plot([lo, lo - cd], [top + 0.62, top + 0.62], color="k", lw=3.0,
+    # Anchored at the best (lowest) mean rank rather than at the axis
+    # boundary "lo": anchoring at "lo" placed the bar mostly outside the
+    # visible plot (lo - cd fell far past the left/best edge of the data
+    # range), so only a sliver of text rendered, floating disconnected from
+    # the axis. Anchoring at the best rank keeps the whole bar on-axis and
+    # gives it the conventional reading: this is how far in rank a method
+    # must be from the best-ranked one before the difference is significant.
+    best = vals.min()
+    cd_hi = best + cd
+    ax.plot([best, cd_hi], [top + 0.62, top + 0.62], color="k", lw=3.0,
             solid_capstyle="butt")
-    ax.text(lo - cd / 2, top + 0.68, f"critical difference = {cd:.2f}",
+    ax.text((best + cd_hi) / 2, top + 0.68, f"CD = {cd:.2f}",
             ha="center", va="bottom", fontsize=8)
 
     # Row order must keep each connector's leader line clear of every other
@@ -110,27 +119,39 @@ def fig2_cd(ranks, cd):
     left_group = sorted(range(half), key=lambda i: vals[i])
     right_group = sorted(range(half, len(names)), key=lambda i: -vals[i])
 
-    # Screen-space (points) offset from the leader line's endpoint, so the
-    # gap is unaffected by the reversed, non-uniform x/y data scaling.
+    # The leader line and its label must be separated by a real gap in DATA
+    # coordinates, not merely a few screen points: a diagonal line and its
+    # label sharing one anchor point visually cross for any non-trivial
+    # slope regardless of point-offset size, because the line's own approach
+    # angle carries its stroke across the text's vertical extent right at
+    # that shared point. Terminating the line well short of where the text
+    # begins removes the crossing structurally rather than by tuning a gap.
+    #
+    # The axis is reversed (large data-x on the left, small data-x on the
+    # right), so horizontal alignment must be chosen by physical screen
+    # side, not by the usual data-coordinate intuition: ha="right" anchors
+    # text at its right edge and grows it *leftward on screen*. The left
+    # group sits at small data-x, which is the physical *right* side of the
+    # plot, so its label must grow further right (ha="left") to move away
+    # from the lines; using ha="right" there would grow the label back
+    # toward the plot centre, straight through the leader lines.
+    line_gap = 0.10   # how far the leader line extends into the margin
+    text_gap = 0.45   # how far the label starts into the margin (> line_gap)
     for slot, i in enumerate(left_group):
         nm, v = names[i], vals[i]
         y = top - row_h * (slot + 1)
-        x_end = lo - 0.10
-        # single diagonal leader: touches the text zone only at its own row,
-        # so it cannot cross through another row's label text.
+        x_end = lo - line_gap
+        text_x = lo - text_gap
         ax.plot([v, x_end], [top, y], color="k", lw=0.7)
-        ax.annotate(f"{nm} ({v:.2f})", xy=(x_end, y), xycoords="data",
-                    xytext=(-6, 0), textcoords="offset points",
-                    ha="right", va="center", fontsize=8)
+        ax.text(text_x, y, f"{nm} ({v:.2f})", ha="left", va="center", fontsize=8)
 
     for slot, i in enumerate(right_group):
         nm, v = names[i], vals[i]
         y = top - row_h * (slot + 1)
-        x_end = hi + 0.10
+        x_end = hi + line_gap
+        text_x = hi + text_gap
         ax.plot([v, x_end], [top, y], color="k", lw=0.7)
-        ax.annotate(f"{nm} ({v:.2f})", xy=(x_end, y), xycoords="data",
-                    xytext=(6, 0), textcoords="offset points",
-                    ha="left", va="center", fontsize=8)
+        ax.text(text_x, y, f"{nm} ({v:.2f})", ha="right", va="center", fontsize=8)
     save(fig, "fig2_critical_difference")
 
 

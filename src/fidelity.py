@@ -63,6 +63,9 @@ def run_reference(alg, problem, seed):
     return (float(f[0]) if viol <= 1e-8 else np.nan), model.nfe_counter
 
 
+EXCLUDED = ["DiscBrake"]   # formulation under-constrained; see manuscript Section 4.6
+
+
 def main():
     import sys
     subset = sys.argv[1].split(",") if len(sys.argv) > 1 else list(REF)
@@ -70,6 +73,8 @@ def main():
     rows = json.load(open(fn)) if os.path.exists(fn) else []
     done = {(r["problem"], r["algorithm"]) for r in rows}
     for p in PROBLEMS:
+        if p.name in EXCLUDED:
+            continue
         for alg in subset:
             if (p.name, alg) in done:
                 continue
