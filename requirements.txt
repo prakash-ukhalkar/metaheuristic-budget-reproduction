@@ -1,7 +1,15 @@
-numpy
-scipy
-pandas
-matplotlib
-cma
-scikit-posthocs
+# Pinned 2026-09-05. The manuscript's data-availability statement claims software
+# versions are pinned here; until this date the file listed bare package names with
+# no version constraints, so exact reproduction of published p-value decimals could
+# not be guaranteed (Holm-corrected win/tie/loss outcomes and Friedman statistics
+# were re-verified against these exact versions and match the manuscript).
+# mealpy's version is not pinned because it was not present in the verification
+# environment used to re-run analysis.py on 2026-09-05; fill in from the environment
+# used for the original fidelity.py run (results/fidelity.json) before archiving.
+numpy==2.2.6
+scipy==1.15.3
+pandas==2.3.3
+matplotlib==3.10.9
+cma==4.4.4
+scikit-posthocs==0.14.0
 mealpy
