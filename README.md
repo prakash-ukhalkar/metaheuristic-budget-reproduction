@@ -54,7 +54,9 @@ Six metaphor-based algorithms (GWO, WOA, SCA, SSA, HHO, AOA) are compared agains
 ## Key results
 
 Full statistics are in [results/analysis.json](results/analysis.json) and
-[results/headline_v2.json](results/headline_v2.json); figures are in [figures/](figures/).
+[results/headline_v2.json](results/headline_v2.json); figures are in [figures/](figures/). Both
+are the current, canonical outputs of `src/analysis.py` and `src/extra_analysis.py` respectively,
+and match every number reported in the manuscript.
 
 - **Friedman test across the 8 admitted problems**: χ² = 50.97, p = 1.8 × 10⁻⁷ — highly
   significant differences among the 11 algorithms.
@@ -102,7 +104,8 @@ pip install -r requirements.txt
 ```
 
 Requires `numpy`, `scipy`, `pandas`, `matplotlib`, `cma`, `scikit-posthocs`, and `mealpy` (for the
-fidelity check only).
+fidelity check only). Versions are pinned in `requirements.txt`, except `mealpy`, whose version
+from the original fidelity run is not yet recorded.
 
 ## Reproducing the results
 
