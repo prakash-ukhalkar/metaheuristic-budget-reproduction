@@ -1,12 +1,4 @@
-"""Generate every manuscript figure.
-
-Figures are numbered in the order they are first referred to in the text, as
-required by the journal. Each is written as both PNG (screen) and PDF (vector,
-the journal's preferred submission format). Fonts are sized for 8-12 pt at the
-final printed width. Colour is never the only carrier of information: every
-line has a distinct dash pattern and marker, and the one heat map uses a
-monotonic grey scale with the exact counts printed in each cell.
-"""
+"""Manuscript figures (v2).  Reads results/analysis.json and the raw sweeps."""
 import json
 import os
 
@@ -15,291 +7,233 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
-from analysis import (BASELINES, ORDER, TEST_GROUP, TRAIN_PROBLEMS,
-                      load, pairwise_wilcoxon, friedman_nemenyi)
-from problems import PROBLEM_MAP
+import analysis as A
 
-FIG = os.path.join(os.path.dirname(__file__), "..", "figures")
+FIG = os.path.join(A.HERE, "..", "figures")
 os.makedirs(FIG, exist_ok=True)
-BUDGET = 15000
-
-plt.rcParams.update({
-    "font.size": 9, "axes.labelsize": 9, "axes.titlesize": 9,
-    "xtick.labelsize": 8, "ytick.labelsize": 8, "legend.fontsize": 8,
-    "axes.grid": True, "grid.alpha": 0.3, "grid.linewidth": 0.5,
-    "figure.dpi": 300, "savefig.bbox": "tight", "savefig.pad_inches": 0.03,
-    "font.family": "DejaVu Sans", "pdf.fonttype": 42,
-})
-MARK = {"GWO": "o", "WOA": "s", "SCA": "^", "SSA": "v", "HHO": "D", "AOA": "P",
-        "DE": "X", "PSO": "*", "LSHADE": "<", "CMAES": ">", "RS": "h"}
-DASH = {"GWO": "-", "WOA": "--", "SCA": "-.", "SSA": ":", "HHO": "-", "AOA": "--",
-        "DE": "-.", "PSO": ":", "LSHADE": "-", "CMAES": "--", "RS": "-."}
-COL = {a: ("black" if a in TEST_GROUP else "0.45") for a in ORDER}
+plt.rcParams.update({"font.size": 9, "axes.grid": False, "figure.dpi": 200,
+                     "savefig.bbox": "tight", "font.family": "DejaVu Sans"})
+LABEL = {"LSHADE": "L-SHADE", "CMAES": "CMA-ES", "RS": "Random search"}
+MET_C, BASE_C, EXT_C = "#C0392B", "#1F4E79", "#E69F00"
+lab = lambda a: LABEL.get(a, a.replace("mp_", "mp-"))
+# line charts: one colour and marker per algorithm (Okabe-Ito based); solid = baselines, dashed = metaphor-based
+STY = {"DE": ("#0072B2", "o"), "PSO": ("#56B4E9", "s"), "LSHADE": ("#000000", "^"), "CMAES": ("#009E73", "D"),
+       "RS": ("#888888", "x"), "GWO": ("#D55E00", "o"), "WOA": ("#CC79A7", "s"), "SCA": ("#E69F00", "^"),
+       "SSA": ("#8C564B", "D"), "HHO": ("#A6761D", "v"), "AOA": ("#6A3D9A", "P")}
+kind = lambda a: BASE_C if a in A.BASELINES else (EXT_C if a in A.EXT or a.startswith("mp_") else MET_C)
 
 
-def save(fig, stem):
-    fig.savefig(f"{FIG}/{stem}.png")
-    fig.savefig(f"{FIG}/{stem}.pdf")
+def save(fig, name):
+    fig.savefig(f"{FIG}/{name}.pdf")
+    fig.savefig(f"{FIG}/{name}.png")
     plt.close(fig)
 
 
-# --------------------------------------------------------------- Figure 1
-def fig1_design():
-    fig, ax = plt.subplots(figsize=(7.0, 3.2))
-    ax.axis("off"); ax.set_xlim(0, 10); ax.set_ylim(0, 5)
-
-    def box(x, y, w, h, t):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.07",
-                                    fc="white", ec="k", lw=0.9))
-        ax.text(x + w / 2, y + h / 2, t, ha="center", va="center", fontsize=7.5)
-
-    def arrow(x1, y1, x2, y2):
-        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="->",
-                                     mutation_scale=8, lw=0.8, color="k"))
-
-    box(0.1, 3.55, 2.2, 1.05, "8 design problems\nverified against\npublished optima")
-    box(0.1, 2.00, 2.2, 1.05, "11 algorithms\n6 metaphor-based\n5 baselines")
-    box(0.1, 0.45, 2.2, 1.05, "3 constraint\nschemes: Deb,\nstatic, $\\epsilon$")
-    box(3.05, 2.70, 2.1, 1.05, "matched-budget\ntuning on 3\ntraining problems")
-    box(3.05, 1.15, 2.1, 1.05, "author-default\nhyperparameters")
-    box(5.95, 1.60, 1.9, 1.85, "51 seeded runs\n15,000 evaluations\nshared evaluator\nseeds paired\nacross algorithms")
-    box(8.30, 1.60, 1.6, 1.85, "Friedman\n+ Nemenyi\n\nWilcoxon\n+ Holm\n\n$\\hat{A}_{12}$")
-    for y in (4.07, 2.52, 0.97):
-        arrow(2.32, y, 3.00, 3.05 if y > 3.5 else (2.20 if y < 1.5 else 2.60))
-    arrow(5.17, 3.20, 5.90, 2.90)
-    arrow(5.17, 1.65, 5.90, 2.10)
-    arrow(7.88, 2.52, 8.25, 2.52)
-    save(fig, "fig1_design")
-
-
-# --------------------------------------------------------------- Figure 2
-def fig2_cd(ranks, cd):
-    """Critical difference diagram with labels held clear of the leader lines."""
-    names, vals = list(ranks.index), ranks.values
-    lo, hi = np.floor(vals.min()) - 0.5, np.ceil(vals.max()) + 0.5
-    pad = 1.35                       # horizontal room reserved for text
-    half = int(np.ceil(len(names) / 2))
-    row_h = 0.34
-    top = 0.0
-    bottom = -row_h * (half + 1.6)
-
-    fig, ax = plt.subplots(figsize=(7.0, 3.1))
-    ax.set_xlim(hi + pad, lo - pad)          # reversed: rank 1 on the right
-    ax.set_ylim(bottom, 1.05)
+def fig_design():
+    fig, ax = plt.subplots(figsize=(7.4, 3.3))
     ax.axis("off")
-
-    ax.hlines(top, lo, hi, color="k", lw=1.1)
-    for tck in np.arange(np.ceil(lo), np.floor(hi) + 1):
-        ax.vlines(tck, top, top + 0.07, color="k", lw=1.0)
-        ax.text(tck, top + 0.13, f"{int(tck)}", ha="center", va="bottom", fontsize=8)
-
-    # Anchored at the best (lowest) mean rank rather than at the axis
-    # boundary "lo": anchoring at "lo" placed the bar mostly outside the
-    # visible plot (lo - cd fell far past the left/best edge of the data
-    # range), so only a sliver of text rendered, floating disconnected from
-    # the axis. Anchoring at the best rank keeps the whole bar on-axis and
-    # gives it the conventional reading: this is how far in rank a method
-    # must be from the best-ranked one before the difference is significant.
-    best = vals.min()
-    cd_hi = best + cd
-    ax.plot([best, cd_hi], [top + 0.62, top + 0.62], color="k", lw=3.0,
-            solid_capstyle="butt")
-    ax.text((best + cd_hi) / 2, top + 0.68, f"CD = {cd:.2f}",
-            ha="center", va="bottom", fontsize=8)
-
-    # Row order must keep each connector's leader line clear of every other
-    # row's text. The label margin for the "left" (best-rank) group sits
-    # below the group's minimum value, so the shallowest row must hold the
-    # smallest value (ascending). The margin for the "right" (worst-rank)
-    # group sits above the group's maximum value, so it must be reversed
-    # (descending) or every deeper row's leader line crosses the shallower
-    # rows' text on its way out to the margin.
-    left_group = sorted(range(half), key=lambda i: vals[i])
-    right_group = sorted(range(half, len(names)), key=lambda i: -vals[i])
-
-    # The leader line and its label must be separated by a real gap in DATA
-    # coordinates, not merely a few screen points: a diagonal line and its
-    # label sharing one anchor point visually cross for any non-trivial
-    # slope regardless of point-offset size, because the line's own approach
-    # angle carries its stroke across the text's vertical extent right at
-    # that shared point. Terminating the line well short of where the text
-    # begins removes the crossing structurally rather than by tuning a gap.
-    #
-    # The axis is reversed (large data-x on the left, small data-x on the
-    # right), so horizontal alignment must be chosen by physical screen
-    # side, not by the usual data-coordinate intuition: ha="right" anchors
-    # text at its right edge and grows it *leftward on screen*. The left
-    # group sits at small data-x, which is the physical *right* side of the
-    # plot, so its label must grow further right (ha="left") to move away
-    # from the lines; using ha="right" there would grow the label back
-    # toward the plot centre, straight through the leader lines.
-    line_gap = 0.10   # how far the leader line extends into the margin
-    text_gap = 0.45   # how far the label starts into the margin (> line_gap)
-    for slot, i in enumerate(left_group):
-        nm, v = names[i], vals[i]
-        y = top - row_h * (slot + 1)
-        x_end = lo - line_gap
-        text_x = lo - text_gap
-        ax.plot([v, x_end], [top, y], color="k", lw=0.7)
-        ax.text(text_x, y, f"{nm} ({v:.2f})", ha="left", va="center", fontsize=8)
-
-    for slot, i in enumerate(right_group):
-        nm, v = names[i], vals[i]
-        y = top - row_h * (slot + 1)
-        x_end = hi + line_gap
-        text_x = hi + text_gap
-        ax.plot([v, x_end], [top, y], color="k", lw=0.7)
-        ax.text(text_x, y, f"{nm} ({v:.2f})", ha="right", va="center", fontsize=8)
-    save(fig, "fig2_critical_difference")
+    boxes = [
+        (0.00, 0.62, 0.31, 0.34, "19 problems\n9 engineering design\n10 CEC 2006 (2 to 20 variables)\npublished optimum reproduced"),
+        (0.00, 0.08, 0.31, 0.40, "23 algorithms\n6 metaphor-based (own code)\n6 same, third-party code\n6 further metaphor-based\n5 reference algorithms"),
+        (0.39, 0.30, 0.25, 0.40, "One shared evaluator\nbudget metering\nbound repair, violation\nanytime trace\n3 constraint schemes"),
+        (0.70, 0.70, 0.30, 0.26, "Protocol factors\n5,000 to 150,000 evaluations\ntuning: 32 vs 128 settings\nheld-out problems"),
+        (0.70, 0.36, 0.30, 0.26, "Paired seeds\n31 to 51 runs per pair\nFriedman, Wilcoxon + Holm,\neffect size, bootstrap"),
+        (0.70, 0.02, 0.30, 0.26, "Robustness checks\nsecond implementation\nbest-of-both implementation\nexhaustive formulation audit"),
+    ]
+    for x, y, w, h, t in boxes:
+        ax.add_patch(plt.Rectangle((x, y), w, h, fc="#F4F6F8", ec="#34495E", lw=1.0))
+        ax.text(x + w / 2, y + h / 2, t, ha="center", va="center", fontsize=7.4)
+    for (x0, y0, x1, y1) in [(0.31, 0.79, 0.39, 0.58), (0.31, 0.28, 0.39, 0.42),
+                             (0.64, 0.50, 0.70, 0.82), (0.64, 0.50, 0.70, 0.49), (0.64, 0.42, 0.70, 0.15)]:
+        ax.annotate("", xy=(x1, y1), xytext=(x0, y0), arrowprops=dict(arrowstyle="->", color="#34495E"))
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1)
+    save(fig, "Figure_1")
 
 
-# --------------------------------------------------------------- Figure 3
-def fig3_wtl(R):
-    M = np.zeros((len(TEST_GROUP), len(BASELINES), 3))
-    for i, a in enumerate(TEST_GROUP):
-        for j, b in enumerate(BASELINES):
-            s = R[(R.test == a) & (R.base == b)].outcome.value_counts()
-            M[i, j] = [s.get("win", 0), s.get("tie", 0), s.get("loss", 0)]
-    net = M[:, :, 0] - M[:, :, 2]
-
-    fig, ax = plt.subplots(figsize=(5.8, 3.4))
-    im = ax.imshow(net, cmap="Greys_r", vmin=-9, vmax=9)
-    ax.set_xticks(range(len(BASELINES)), BASELINES)
-    ax.set_yticks(range(len(TEST_GROUP)), TEST_GROUP)
-    for i in range(len(TEST_GROUP)):
-        for j in range(len(BASELINES)):
-            w, t, l = M[i, j].astype(int)
-            ax.text(j, i, f"{w}/{t}/{l}", ha="center", va="center", fontsize=8,
-                    color="white" if net[i, j] < -2 else "black")
-    ax.set_xlabel("baseline"); ax.set_ylabel("metaphor-based algorithm")
-    ax.grid(False)
-    cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
-    cb.set_label("net wins (wins − losses)", fontsize=8)
-    save(fig, "fig3_win_tie_loss")
-
-
-# --------------------------------------------------------------- Figure 4
-def fig4_ecdf(dm):
-    fes = np.linspace(BUDGET / 100, BUDGET, 100)
-    fig, ax = plt.subplots(figsize=(6.6, 3.6))
-    for a in ORDER:
-        sub = dm[dm.algorithm == a]
-        T = np.array([np.array(x) for x in sub["trace"]])
-        fs = sub["fstar"].values[:, None]
-        gap = np.abs(T - fs) / np.abs(fs)
-        frac = (np.where(np.isfinite(gap), gap, np.inf) <= 0.01).mean(axis=0)
-        ax.plot(fes, frac, DASH[a], marker=MARK[a], markevery=14, ms=4, lw=1.2,
-                color=COL[a], label=a)
-    ax.set_xlabel("function evaluations")
-    ax.set_ylabel("fraction of runs within 1% of published best")
-    ax.set_ylim(-0.02, 1.02)
-    ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1.01, 0.5),
-              frameon=False, handlelength=3.0)
-    save(fig, "fig4_ecdf")
+def cd_diagram(ranks, cd, ax, ci=None):
+    names = list(ranks)
+    r = np.array([ranks[n] for n in names])
+    k = len(names)
+    lo, hi = 1, k
+    ax.set_xlim(hi + 0.4, lo - 0.4)      # best (low rank) on the right? keep best on the left:
+    ax.set_xlim(lo - 0.4, hi + 0.4)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    y0 = 0.62
+    ax.plot([lo, hi], [y0, y0], "k", lw=1)
+    for t in range(lo, hi + 1):
+        ax.plot([t, t], [y0, y0 + 0.02], "k", lw=1)
+        ax.text(t, y0 + 0.05, str(t), ha="center", va="bottom", fontsize=8)
+    half = (k + 1) // 2
+    for i, (n, v) in enumerate(zip(names, r)):
+        up = i < half
+        ytxt = 0.40 - 0.045 * i if up else 0.40 - 0.045 * (k - 1 - i) - 0.0
+        ytxt = y0 - 0.08 - 0.055 * i if i < half else y0 - 0.08 - 0.055 * (k - 1 - i)
+        x_txt = lo - 0.3 if i < half else hi + 0.3
+        ha = "right" if i < half else "left"
+        ax.plot([v, v, x_txt + (0.05 if i < half else -0.05)], [y0, ytxt, ytxt], color="#555", lw=0.7)
+        ax.text(x_txt, ytxt, f"{lab(n)}  ({v:.2f})", ha=ha, va="center", fontsize=8,
+                color=kind(n))
+    # cliques of algorithms not separated by the critical difference
+    ybar = y0 + 0.17
+    placed = []
+    i = 0
+    while i < k:
+        j = i
+        while j + 1 < k and r[j + 1] - r[i] < cd:
+            j += 1
+        if j > i and not any(a <= i and j <= b for a, b in placed):
+            ax.plot([r[i] - 0.02, r[j] + 0.02], [ybar, ybar], "k", lw=2.2)
+            ybar += 0.035
+            placed.append((i, j))
+        i += 1
+    ax.plot([lo, lo + cd], [y0 + 0.40, y0 + 0.40], "k", lw=1.5)
+    ax.text(lo + cd / 2, y0 + 0.43, f"CD = {cd:.2f}", ha="center", fontsize=8)
 
 
-# --------------------------------------------------------------- Figure 5
-def fig5_convergence(dm, problems):
-    fes = np.linspace(BUDGET / 100, BUDGET, 100)
-    fig, axes = plt.subplots(2, 2, figsize=(7.0, 4.8))
-    for ax, pn in zip(axes.ravel(), problems):
-        sub = dm[dm.problem == pn]
-        fstar = PROBLEM_MAP[pn].known_f
-        for a in ORDER:
-            T = np.array([np.array(x) for x in sub[sub.algorithm == a]["trace"]])
-            gap = np.abs(T - fstar) / abs(fstar)
-            med = np.median(np.where(np.isfinite(gap), gap, 10.0), axis=0)
-            ax.plot(fes, np.maximum(med, 1e-12), DASH[a], marker=MARK[a],
-                    markevery=18, ms=3, lw=0.9, color=COL[a], label=a)
-        ax.set_yscale("log"); ax.set_title(pn)
-        ax.set_xlabel("function evaluations")
-        ax.set_ylabel("median relative gap")
-    h, l = axes[0, 0].get_legend_handles_labels()
-    fig.legend(h, l, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.07),
-               frameon=False, handlelength=3.0)
-    fig.tight_layout()
-    save(fig, "fig5_convergence")
+def fig_cd(an):
+    f = an["friedman_core"]
+    fig, ax = plt.subplots(figsize=(7.2, 3.4))
+    cd_diagram(f["ranks"], f["cd"], ax)
+    ax.set_ylim(-0.02, 1.15)
+    save(fig, "Figure_2")
 
 
-# --------------------------------------------------------------- Figure 6
-def fig6_box(dm, problems):
-    fig, ax = plt.subplots(figsize=(7.0, 3.4))
-    data = [np.maximum(dm[(dm.algorithm == a) & (dm.problem.isin(problems))]["gap"].values, 1e-9)
-            for a in ORDER]
-    bp = ax.boxplot(data, tick_labels=ORDER, showfliers=True, patch_artist=True,
-                    widths=0.6, flierprops=dict(marker="+", ms=3, mew=0.6),
-                    medianprops=dict(color="k", lw=1.2))
-    for i, b in enumerate(bp["boxes"]):
-        b.set_facecolor("0.92" if ORDER[i] in TEST_GROUP else "0.6")
-        b.set_edgecolor("k"); b.set_linewidth(0.7)
-    ax.axvline(len(TEST_GROUP) + 0.5, color="k", lw=0.8, ls=":")
-    ax.text(3.5, ax.get_ylim()[1], "metaphor-based", ha="center", va="top", fontsize=8)
-    ax.text(9.0, ax.get_ylim()[1], "baselines", ha="center", va="top", fontsize=8)
-    ax.set_yscale("log"); ax.set_ylabel("relative gap to published best")
-    ax.set_xticklabels(ORDER, rotation=45, ha="right")
-    save(fig, "fig6_boxplot")
+def fig_wtl(an):
+    P = pd.read_csv(f"{A.TAB}/paired_wilcoxon_core.csv")
+    bases = ["DE", "LSHADE", "CMAES", "PSO", "RS"]
+    fig, ax = plt.subplots(figsize=(6.2, 3.3))
+    M = np.zeros((6, 5))
+    txt = {}
+    for i, a in enumerate(A.METAPHOR):
+        for j, b in enumerate(bases):
+            s = P[(P.test == a) & (P.base == b)].outcome.value_counts()
+            w, t, l = s.get("win", 0), s.get("tie", 0), s.get("loss", 0)
+            M[i, j] = w - l
+            txt[i, j] = f"{w}/{t}/{l}"
+    im = ax.imshow(M, cmap="RdBu", vmin=-19, vmax=19, aspect="auto")
+    for (i, j), t in txt.items():
+        ax.text(j, i, t, ha="center", va="center", fontsize=8,
+                color="white" if abs(M[i, j]) > 11 else "black")
+    ax.set_xticks(range(5)); ax.set_xticklabels([lab(b) for b in bases])
+    ax.set_yticks(range(6)); ax.set_yticklabels(A.METAPHOR)
+    fig.colorbar(im, ax=ax, label="wins - losses")
+    save(fig, "Figure_3")
 
 
-# --------------------------------------------------------------- Figure 7
-def fig7_tuning(dm, dt, heldout):
-    def mg(df):
-        return (df[df.problem.isin(heldout)]
-                .groupby(["algorithm", "problem"])["gap"].median()
-                .unstack()[heldout].mean(axis=1))
-    d0, d1 = mg(dm), mg(dt)
-    fig, ax = plt.subplots(figsize=(6.4, 3.8))
-    for a in ORDER:
-        ax.plot([0, 1], [max(d0[a], 1e-6), max(d1[a], 1e-6)], DASH[a],
-                marker=MARK[a], ms=5, lw=1.2, color=COL[a], label=a)
-    ax.set_xticks([0, 1], ["author defaults", "matched-budget tuning"])
-    ax.set_yscale("log"); ax.set_xlim(-0.08, 1.08)
-    ax.set_ylabel("mean median relative gap (5 held-out problems)")
-    ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1.01, 0.5),
-              frameon=False, handlelength=3.0)
-    save(fig, "fig7_tuning")
+def fig_heat():
+    main = A.load_tag("main")
+    ref = A.Ref(main)
+    main["ngap"] = ref.ngap(main)
+    M = A.med_matrix(main[main.run < 51], A.CORE, A.PNAMES)
+    order = list(M.mean(0).rank().sort_values().index)
+    Z = np.log10(np.clip(M[order].T.values, 1e-6, 10))
+    fig, ax = plt.subplots(figsize=(8.2, 3.6))
+    im = ax.imshow(Z, cmap="viridis_r", aspect="auto", vmin=-6, vmax=1)
+    ax.set_xticks(range(len(A.PNAMES))); ax.set_xticklabels(A.PNAMES, rotation=60, ha="right", fontsize=7)
+    ax.set_yticks(range(len(order))); ax.set_yticklabels([lab(a) for a in order])
+    fig.colorbar(im, ax=ax, label="log10 median normalised gap")
+    save(fig, "Figure_4")
 
 
-# --------------------------------------------------------------- Figure 8
-def fig8_constraint(dm, ds, de, problems):
-    sets = {"Deb feasibility rules": dm[dm.problem.isin(problems)],
-            "static penalty": ds, "$\\epsilon$-constrained": de}
-    vals = {k: [max(v.groupby("algorithm")["gap"].mean().get(a, np.nan), 1e-8) for a in ORDER]
-            for k, v in sets.items()}
-    x = np.arange(len(ORDER)); w = 0.27
-    hatch = ["", "///", "..."]; shade = ["0.30", "0.60", "0.85"]
-    fig, ax = plt.subplots(figsize=(7.0, 3.5))
-    for i, (k, v) in enumerate(vals.items()):
-        ax.bar(x + (i - 1) * w, v, w, label=k, hatch=hatch[i],
-               color=shade[i], edgecolor="k", linewidth=0.6)
-    ax.set_yscale("log")
-    ax.set_xticks(x, ORDER, rotation=45, ha="right")
-    ax.set_ylabel("mean relative gap")
-    ax.legend(frameon=False, ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.16))
-    save(fig, "fig8_constraint_scheme")
+def fig_anytime():
+    tr = A.load_traces("main")
+    main = A.load_tag("main")
+    ref = A.Ref(main)
+    fig, axs = plt.subplots(1, 2, figsize=(7.6, 3.2), sharey=True)
+    for ax, tau in zip(axs, (1e-2, 1e-4)):
+        xs = np.linspace(150, 15000, 100)
+        curves = {}
+        for r in tr:
+            if r["algorithm"] not in A.CORE or r["run"] >= 51:
+                continue
+            fs = A.FSTAR[r["problem"]]
+            den = max(abs(ref.med[r["problem"]] - fs), 1e-300)
+            t = np.array([np.nan if v is None else v for v in r["trace"]], dtype=float)
+            hit = ((t - fs) / den) <= tau
+            curves.setdefault(r["algorithm"], []).append(hit)
+        for a in A.CORE:
+            c = np.mean(curves[a], axis=0)
+            ax.plot(xs, c, color=STY[a][0], ls="-" if a in A.BASELINES else "--", lw=1.4,
+                    marker=STY[a][1], ms=3.2, markevery=12, label=lab(a))
+        ax.set_xlabel("function evaluations"); ax.set_title(f"normalised gap <= {tau:g}", fontsize=9)
+        ax.grid(alpha=0.25)
+    axs[0].set_ylabel("fraction of runs (19 problems)")
+    axs[1].legend(fontsize=6.5, ncol=1, loc="center left", bbox_to_anchor=(1.01, 0.5))
+    save(fig, "Figure_5")
 
 
-def main():
-    dm, dt = load("main"), load("tuned")
-    ds, de = load("cons", "static"), load("cons", "eps")
-    allp = list(dm.problem.unique())
-    scale = [p for p in allp if p != "GearTrain"]
-    heldout = [p for p in scale if p not in TRAIN_PROBLEMS]
-    consp = list(ds.problem.unique())
-    _, _, _, ranks, cd = friedman_nemenyi(dm, allp)
-    R = pairwise_wilcoxon(dm, allp)
+def fig_impl(an):
+    fig, axs = plt.subplots(1, 2, figsize=(8.0, 3.2), gridspec_kw={"width_ratios": [1, 1.25]})
+    ax = axs[0]
+    ip = an["impl_pairs"]
+    y = np.arange(6)
+    a1 = [ip[a]["ours_better"] for a in A.METAPHOR]
+    a2 = [ip[a]["equivalent"] for a in A.METAPHOR]
+    a3 = [ip[a]["twin_better"] for a in A.METAPHOR]
+    ax.barh(y, a1, color=MET_C, label="in-house better")
+    ax.barh(y, a2, left=a1, color="#BBBBBB", label="no difference")
+    ax.barh(y, a3, left=np.array(a1) + np.array(a2), color=EXT_C, label="third-party better")
+    ax.set_yticks(y); ax.set_yticklabels(A.METAPHOR); ax.invert_yaxis()
+    ax.set_xlabel("problems (of 19)"); ax.legend(fontsize=6.5, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3)
+    ax = axs[1]
+    f = an["friedman_oracle_impl"]["ranks"]
+    names = list(f)
+    ax.barh(range(len(names)), [f[n] for n in names],
+            color=[BASE_C if n in A.BASELINES else MET_C for n in names])
+    ax.set_yticks(range(len(names))); ax.set_yticklabels([lab(n) for n in names]); ax.invert_yaxis()
+    ax.set_xlabel("Friedman mean rank (best implementation)")
+    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.2, top=0.86, wspace=0.55)
+    save(fig, "Figure_6")
 
-    fig1_design()
-    fig2_cd(ranks, cd)
-    fig3_wtl(R)
-    fig4_ecdf(dm)
-    fig5_convergence(dm, ["WeldedBeam", "SpeedReducer", "PressureVessel", "TensionSpring"])
-    fig6_box(dm, scale)
-    fig7_tuning(dm, dt, heldout)
-    fig8_constraint(dm, ds, de, consp)
-    print("figures 1-8 written as PNG + PDF")
+
+def fig_tuning(an):
+    t = an.get("tuning_mean_median_ngap")
+    if not t:
+        return
+    algs = A.CORE[:-1]
+    fig, ax = plt.subplots(figsize=(7.0, 3.0))
+    w = 0.26
+    x = np.arange(len(algs))
+    for i, (k, c, nm) in enumerate([("default", "#BBBBBB", "default settings"), ("tuned32", "#5D8AA8", "tuned, 32 configurations"),
+                                    ("tuned128", "#1F4E79", "tuned, 128 configurations")]):
+        if k in t:
+            ax.bar(x + (i - 1) * w, [t[k]["heldout"][a] for a in algs], w, color=c, label=nm)
+    ax.set_xticks(x); ax.set_xticklabels([lab(a) for a in algs], rotation=30)   # linear axis: bars start at zero
+    ax.set_ylabel("mean median normalised gap\n(held-out problems)"); ax.legend(fontsize=7)
+    save(fig, "Figure_7")
+
+
+def fig_sens(an):
+    fig, axs = plt.subplots(1, 2, figsize=(8.0, 3.2))
+    for ax, key, title, xl in [(axs[0], "friedman_schemes", "constraint-handling scheme", None),
+                               (axs[1], "friedman_budgets", "evaluation budget", None)]:
+        if key not in an:
+            continue
+        d = an[key]
+        keys = list(d)
+        for a in A.CORE:
+            ax.plot(range(len(keys)), [d[k]["ranks"][a] for k in keys], marker=STY[a][1], ms=4,
+                    color=STY[a][0], ls="-" if a in A.BASELINES else "--", lw=1.2, label=lab(a))
+        ax.set_xticks(range(len(keys)))
+        ax.set_xticklabels(keys if key == "friedman_schemes" else [f"{int(k):,}" for k in keys])
+        ax.set_xlabel(title); ax.set_ylabel("Friedman mean rank"); ax.invert_yaxis()
+        ax.grid(alpha=0.25)
+    axs[1].legend(fontsize=6, loc="center left", bbox_to_anchor=(1.01, 0.5))
+    save(fig, "Figure_8")
+
+
+def fig_ext(an):
+    f = an["friedman_extended"]
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
+    cd_diagram(f["ranks"], f["cd"], ax)
+    ax.set_ylim(-0.4, 1.15)
+    save(fig, "Figure_9")
 
 
 if __name__ == "__main__":
-    main()
+    an = json.load(open(f"{A.RES}/analysis.json"))
+    fig_design(); fig_cd(an); fig_wtl(an); fig_heat(); fig_anytime()
+    fig_impl(an); fig_tuning(an); fig_sens(an); fig_ext(an)
+    print("figures written")

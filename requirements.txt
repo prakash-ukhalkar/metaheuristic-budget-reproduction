@@ -1,25 +1,9 @@
-# Pinned 2026-09-05. The manuscript's data-availability statement claims software
-# versions are pinned here; until this date the file listed bare package names with
-# no version constraints, so exact reproduction of published p-value decimals could
-# not be guaranteed (Holm-corrected win/tie/loss outcomes and Friedman statistics
-# were re-verified against these exact versions and match the manuscript).
-# mealpy==3.0.3 ran the full experimental pipeline (tune/main/tuned/cons/budget/
-# fidelity) end-to-end without error on 2026-09-05, confirming compatibility, and
-# a full fresh re-run under these exact pinned versions reproduced the archived
-# main-sweep results almost exactly (9 of 11 Friedman mean ranks bit-identical,
-# the other 2 differing by 0.0625 — a single tie-break in one run out of 51x8;
-# win/tie/loss totals and median effect size matched to the reported precision).
-# The fidelity.py sub-check specifically was re-run successfully under this
-# mealpy version but its exact output was not diffed against the archived
-# fidelity.json before being overwritten — only the main-sweep numbers above
-# were rigorously compared. Not yet the original run's mealpy version, which
-# is unknown; this pin fixes an environment now confirmed to reproduce the
-# main experimental result, not necessarily the one that produced the first
-# fidelity.json byte-for-bit.
-numpy==2.2.6
-scipy==1.15.3
-pandas==2.3.3
-matplotlib==3.10.9
-cma==4.4.4
-scikit-posthocs==0.14.0
+# Environment used for every reported number (Python 3.13, Windows 11).
+# mealpy 3.0.3 declares numpy<=1.26 but runs correctly on numpy 2.1; install it with
+#   pip install --no-deps mealpy==3.0.3
+numpy==2.1.2
+scipy==1.14.1
+pandas==2.2.3
+matplotlib==3.9.2
+cma==4.5.0
 mealpy==3.0.3

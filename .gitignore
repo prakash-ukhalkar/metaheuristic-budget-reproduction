@@ -30,3 +30,40 @@ Thumbs.db
 
 # Environment / secrets
 .env
+
+# ---------------------------------------------------------------------------
+# Not part of the public code/data release
+# ---------------------------------------------------------------------------
+# manuscript, submission and journal material (scripts that build the paper, reviews, letters, guides)
+manuscript/
+submission/
+journal/
+reviews/
+*.docx
+*.doc
+*.odt
+*.pdf.bak
+Engineering-Applications-of-AI/
+swarm-and-evolutionary-computation/
+
+# test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# run bookkeeping that only matters on the machine that produced the results
+results/runner.lock
+results/ALLDONE
+results/ALL_PHASES_COMPLETE
+results/done_*
+results/run_*.log
+results/run_*.err
+results/*/*.state.json
+results/*/*.part
+results/**/*.tmp
+
+# scratch files
+scratch/
+tmp/
+*.tmp
+~$*

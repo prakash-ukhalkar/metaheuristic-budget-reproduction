@@ -1,321 +1,399 @@
-"""Statistical analysis and figures.
+"""Statistical analysis for the v2 study.  Writes results/analysis.json and tables/*.csv.
 
-Primary metric: relative gap to the published best-known objective,
-    gap = (f_best - f*) / |f*|
-Infeasible runs are assigned the penalty value PENALTY so that they rank
-below every feasible run.
+Performance measure ("normalised gap"), scale-free so that every problem,
+including GearTrain (f* ~ 1e-12) and G03 (f* < 0), can enter the aggregates:
+
+    ngap = (f_best - f*) / (median_RS - f*)
+
+where median_RS is the median final objective of uniform random search on the
+same problem at the same budget (main sweep).  0 = reached the published best,
+1 = as good as random search's median, infeasible run = PENALTY.
+
+Rank statistics use the per-problem MEDIAN ngap over runs.
 """
+import glob
 import json
 import os
+import itertools
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-from problems import PROBLEM_MAP
+from problems import PROBLEM_MAP, PROBLEMS
 
-HERE = os.path.dirname(__file__)
-OUT = os.path.join(HERE, "..", "results")
-FIG = os.path.join(HERE, "..", "figures")
-os.makedirs(FIG, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+RES = os.path.join(HERE, "..", "results")
+TAB = os.path.join(RES, "tables")
+os.makedirs(TAB, exist_ok=True)
 
 PENALTY = 10.0
-TEST_GROUP = ["GWO", "WOA", "SCA", "SSA", "HHO", "AOA"]
+METAPHOR = ["GWO", "WOA", "SCA", "SSA", "HHO", "AOA"]
 BASELINES = ["DE", "PSO", "LSHADE", "CMAES", "RS"]
-ORDER = TEST_GROUP + BASELINES
-TRAIN_PROBLEMS = ["PressureVessel", "CantileverBeam", "GearTrain"]
-
-plt.rcParams.update({
-    "font.size": 9, "axes.grid": True, "grid.alpha": 0.3,
-    "figure.dpi": 200, "savefig.bbox": "tight", "font.family": "DejaVu Sans",
-})
-MARKERS = ["o", "s", "^", "v", "D", "P", "X", "*", "<", ">", "h"]
-LINES = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--", "-."]
+CORE = METAPHOR + BASELINES
+TWINS = ["mp_" + a for a in METAPHOR]
+EXT = ["MFO", "FFA", "BA", "EO", "SMA", "MPA"]
+PNAMES = [p.name for p in PROBLEMS]
+TRAIN = ["PressureVessel", "CantileverBeam", "G04", "G08"]
+HELDOUT = [p for p in PNAMES if p not in TRAIN]
+FSTAR = {p.name: p.known_f for p in PROBLEMS}
 
 
-EXCLUDED = ["DiscBrake"]   # formulation under-constrained; see manuscript 4.5
-
-
-def load(tag, scheme="deb"):
-    rows = json.load(open(f"{OUT}/{tag}_{scheme}.json"))
+def load_tag(tag):
+    rows = []
+    for fn in glob.glob(os.path.join(RES, tag, "*.json")):
+        rows += json.load(open(fn))
     df = pd.DataFrame(rows)
-    df = df[~df["problem"].isin(EXCLUDED)].reset_index(drop=True)
-    df["fstar"] = df["problem"].map(lambda p: PROBLEM_MAP[p].known_f)
-    gap = (df["best_f"] - df["fstar"]) / df["fstar"].abs()
-    df["gap"] = np.where(df["feasible"], np.clip(gap, 0, PENALTY), PENALTY)
-    return df
+    return df.drop(columns=["trace"]) if len(df) else df
 
 
-def summary_table(df):
-    g = df.groupby(["problem", "algorithm"])
-    t = g.agg(best=("best_f", "min"), median=("best_f", "median"),
-              mean=("best_f", "mean"), std=("best_f", "std"),
-              worst=("best_f", "max"), feas_rate=("feasible", "mean"),
-              mean_gap=("gap", "mean")).reset_index()
-    return t
+def load_traces(tag):
+    rows = []
+    for fn in glob.glob(os.path.join(RES, tag, "*.json")):
+        rows += json.load(open(fn))
+    return rows
 
 
-def vargha_delaney(a, b):
-    """A12 effect size: P(a < b) + 0.5 P(a == b) for minimisation."""
-    a, b = np.asarray(a), np.asarray(b)
-    m, n = len(a), len(b)
-    r = stats.rankdata(np.concatenate([a, b]))[:m].sum()
-    return (r / m - (m + 1) / 2) / n
+class Ref:
+    """Random-search reference per problem for the normalised gap."""
+
+    RS_MIN_FEASIBLE = 0.5   # random search must be feasible in at least this share of runs
+
+    def __init__(self, main):
+        allrs = main[main.algorithm == "RS"]
+        rs = allrs[allrs.feasible]
+        self.med = rs.groupby("problem")["best_f"].median().to_dict()
+        frac = allrs.groupby("problem")["feasible"].mean().to_dict()
+        # Fixed rule, independent of any compared algorithm: where random search is rarely
+        # feasible (equality constraints, tiny feasible region) its median is not a usable
+        # scale, so the scale falls back to |f*| (a relative error).
+        self.fallback = sorted(p for p in FSTAR if frac.get(p, 0.0) < self.RS_MIN_FEASIBLE)
+        for p in self.fallback:
+            self.med[p] = FSTAR[p] + max(abs(FSTAR[p]), 1e-8)
+        self.rs_feasible_share = {p: float(frac.get(p, 0.0)) for p in FSTAR}
+
+    def ngap(self, df):
+        fs = df["problem"].map(FSTAR)
+        den = (df["problem"].map(self.med) - fs).abs().clip(lower=1e-300)
+        g = (df["best_f"] - fs) / den
+        return np.where(df["feasible"], np.clip(g, -1.0, PENALTY), PENALTY)
 
 
-def friedman_nemenyi(df, problems):
-    """Friedman on the problem x algorithm matrix of mean gaps."""
-    M = (df[df["problem"].isin(problems)]
-         .groupby(["problem", "algorithm"])["gap"].mean().unstack()[ORDER])
+# ------------------------------------------------------------------ statistics
+def nemenyi_cd(k, n, alpha=0.05):
+    q = stats.studentized_range.ppf(1 - alpha, k, np.inf) / np.sqrt(2.0)
+    return float(q * np.sqrt(k * (k + 1) / (6.0 * n)))
+
+
+def med_matrix(df, algs, problems, col="ngap", nruns=None):
+    d = df[df.algorithm.isin(algs) & df.problem.isin(problems)]
+    if nruns:
+        d = d[d.run < nruns]
+    return d.groupby(["problem", "algorithm"])[col].median().unstack()[algs].loc[problems]
+
+
+def friedman(M):
     stat, p = stats.friedmanchisquare(*[M[c].values for c in M.columns])
-    ranks = M.rank(axis=1).mean(axis=0)
-    k, N = M.shape[1], M.shape[0]
-    # Nemenyi critical difference at alpha = 0.05
-    q05 = {2: 1.960, 3: 2.343, 4: 2.569, 5: 2.728, 6: 2.850, 7: 2.949, 8: 3.031,
-           9: 3.102, 10: 3.164, 11: 3.219, 12: 3.268}[k]
-    cd = q05 * np.sqrt(k * (k + 1) / (6.0 * N))
-    return M, stat, p, ranks.sort_values(), cd
+    ranks = M.rank(axis=1, method="average").mean(axis=0)
+    return dict(chi2=float(stat), p=float(p), n=int(M.shape[0]), k=int(M.shape[1]),
+                cd=nemenyi_cd(M.shape[1], M.shape[0]), ranks=ranks.sort_values().to_dict())
 
 
-def pairwise_wilcoxon(df, problems):
-    """Paired Wilcoxon per problem, each test algorithm vs each baseline,
-    Holm-corrected across all comparisons."""
+def boot_rank_ci(M, B=2000, seed=0):
+    rng = np.random.default_rng(seed)
+    R = M.rank(axis=1).values
+    n = R.shape[0]
+    bs = np.array([R[rng.integers(0, n, n)].mean(0) for _ in range(B)])
+    lo, hi = np.percentile(bs, [2.5, 97.5], axis=0)
+    return {a: (float(l), float(h)) for a, l, h in zip(M.columns, lo, hi)}
+
+
+def a12(x, y):
+    """Vargha-Delaney: P(x < y) + 0.5 P(x == y); > 0.5 means x (lower) is better."""
+    x, y = np.asarray(x), np.asarray(y)
+    m, n = len(x), len(y)
+    r = stats.rankdata(np.concatenate([x, y]))[:m].sum()
+    return 1.0 - (r / m - (m + 1) / 2) / n      # rankdata favours larger; flip
+
+
+def holm(p):
+    p = np.asarray(p)
+    order = np.argsort(p)
+    m = len(p)
+    adj = np.empty(m)
+    run = 0.0
+    for i, idx in enumerate(order):
+        run = max(run, (m - i) * p[idx])
+        adj[idx] = min(1.0, run)
+    return adj
+
+
+def paired_tests(df, tests, bases, problems, nruns=None):
+    """Paired Wilcoxon signed-rank per (problem, test, base); Holm over all."""
     recs = []
     for pn in problems:
-        sub = df[df["problem"] == pn]
-        piv = sub.pivot_table(index="run", columns="algorithm", values="gap")
-        for a in TEST_GROUP:
-            for b in BASELINES:
+        d = df[df.problem == pn]
+        if nruns:
+            d = d[d.run < nruns]
+        piv = d.pivot_table(index="run", columns="algorithm", values="ngap")
+        for a in tests:
+            for b in bases:
                 x, y = piv[a].values, piv[b].values
+                ok = np.isfinite(x) & np.isfinite(y)
+                x, y = x[ok], y[ok]
                 if np.allclose(x, y):
-                    pval, statv = 1.0, np.nan
+                    pv = 1.0
                 else:
                     try:
-                        statv, pval = stats.wilcoxon(x, y)
+                        pv = float(stats.wilcoxon(x, y).pvalue)
                     except ValueError:
-                        statv, pval = np.nan, 1.0
-                recs.append(dict(problem=pn, test=a, base=b, stat=statv, p=pval,
-                                 A12=vargha_delaney(x, y),
-                                 median_diff=np.median(x) - np.median(y)))
+                        pv = 1.0
+                recs.append(dict(problem=pn, test=a, base=b, p=pv,
+                                 A12_base_better=a12(y, x),
+                                 med_diff=float(np.median(x) - np.median(y))))
     R = pd.DataFrame(recs)
-    order = np.argsort(R["p"].values)
-    m = len(R)
-    adj = np.empty(m)
-    running = 0.0
-    for i, idx in enumerate(order):
-        v = (m - i) * R["p"].values[idx]
-        running = max(running, v)
-        adj[idx] = min(1.0, running)
-    R["p_holm"] = adj
-    R["outcome"] = np.where(R["p_holm"] >= 0.05, "tie",
-                            np.where(R["median_diff"] < 0, "win", "loss"))
+    R["p_holm"] = holm(R["p"].values)
+    R["outcome"] = np.where(R.p_holm >= 0.05, "tie", np.where(R.med_diff < 0, "win", "loss"))
     return R
 
 
-# --------------------------------------------------------------------------
-# Figures
-# --------------------------------------------------------------------------
-def fig_cd(ranks, cd, path):
-    fig, ax = plt.subplots(figsize=(7.0, 2.6))
-    names = list(ranks.index)
-    vals = ranks.values
-    lo, hi = np.floor(vals.min()) - 0.5, np.ceil(vals.max()) + 0.5
-    ax.set_xlim(hi, lo)
-    ax.set_ylim(0, 1)
-    ax.hlines(0.85, lo, hi, color="k", lw=1)
-    for t in np.arange(np.ceil(lo), np.floor(hi) + 1):
-        ax.vlines(t, 0.85, 0.90, color="k", lw=1)
-        ax.text(t, 0.95, f"{int(t)}", ha="center", fontsize=8)
-    half = int(np.ceil(len(names) / 2))
-    for i, (nm, v) in enumerate(zip(names, vals)):
-        if i < half:
-            y = 0.72 - 0.11 * i
-            ax.plot([v, v, lo + 0.15], [0.85, y, y], color="k", lw=0.8)
-            ax.text(lo + 0.12, y, f"{nm} ({v:.2f})", ha="right", va="center", fontsize=8)
-        else:
-            y = 0.72 - 0.11 * (i - half)
-            ax.plot([v, v, hi - 0.15], [0.85, y, y], color="k", lw=0.8)
-            ax.text(hi - 0.12, y, f"{nm} ({v:.2f})", ha="left", va="center", fontsize=8)
-    ax.plot([lo + 0.3, lo + 0.3 + cd], [0.99, 0.99], color="k", lw=2.5)
-    ax.text(lo + 0.3 + cd / 2, 1.02, f"CD = {cd:.2f}", ha="center", fontsize=8)
-    ax.axis("off")
-    fig.savefig(path)
-    plt.close(fig)
+def wtl(R):
+    c = R.outcome.value_counts()
+    return dict(win=int(c.get("win", 0)), tie=int(c.get("tie", 0)), loss=int(c.get("loss", 0)))
 
 
-def fig_ecdf(df, path, budget=15000):
-    """Anytime ECDF: fraction of (run, problem) pairs within 1% of f* vs budget."""
-    fig, ax = plt.subplots(figsize=(6.4, 4.0))
-    fes = np.linspace(budget / 100, budget, 100)
-    for i, a in enumerate(ORDER):
-        sub = df[df["algorithm"] == a]
-        T = np.array([np.array(t) for t in sub["trace"]])
-        fstar = sub["fstar"].values[:, None]
-        gap = np.abs(T - fstar) / np.abs(fstar)
-        gap = np.where(np.isfinite(gap), gap, np.inf)
-        frac = (gap <= 0.01).mean(axis=0)
-        ax.plot(fes, frac, LINES[i], marker=MARKERS[i], markevery=12, ms=4,
-                lw=1.2, label=a)
-    ax.set_xlabel("function evaluations")
-    ax.set_ylabel("fraction of runs within 1% of published best")
-    ax.set_ylim(-0.02, 1.02)
-    ax.legend(ncol=2, fontsize=8, loc="lower right")
-    fig.savefig(path)
-    plt.close(fig)
-
-
-def fig_convergence(df, path, problems, budget=15000):
-    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.4))
-    fes = np.linspace(budget / 100, budget, 100)
-    for ax, pn in zip(axes.ravel(), problems):
-        sub = df[df["problem"] == pn]
-        fstar = PROBLEM_MAP[pn].known_f
-        for i, a in enumerate(ORDER):
-            T = np.array([np.array(t) for t in sub[sub["algorithm"] == a]["trace"]])
-            gap = np.abs(T - fstar) / abs(fstar)
-            gap = np.where(np.isfinite(gap), gap, PENALTY)
-            med = np.median(gap, axis=0)
-            ax.plot(fes, np.maximum(med, 1e-12), LINES[i], marker=MARKERS[i],
-                    markevery=15, ms=3, lw=1.0, label=a)
-        ax.set_yscale("log")
-        ax.set_title(pn, fontsize=9)
-        ax.set_xlabel("function evaluations")
-        ax.set_ylabel("median relative gap")
-    axes[0, 0].legend(ncol=3, fontsize=6.5, loc="upper right")
-    fig.tight_layout()
-    fig.savefig(path)
-    plt.close(fig)
-
-
-def fig_wtl(R, path):
-    M = np.zeros((len(TEST_GROUP), len(BASELINES), 3))
-    for i, a in enumerate(TEST_GROUP):
-        for j, b in enumerate(BASELINES):
-            s = R[(R["test"] == a) & (R["base"] == b)]["outcome"].value_counts()
-            M[i, j] = [s.get("win", 0), s.get("tie", 0), s.get("loss", 0)]
-    net = M[:, :, 0] - M[:, :, 2]
-    fig, ax = plt.subplots(figsize=(5.6, 3.6))
-    im = ax.imshow(net, cmap="RdBu", vmin=-9, vmax=9)
-    ax.set_xticks(range(len(BASELINES)), BASELINES)
-    ax.set_yticks(range(len(TEST_GROUP)), TEST_GROUP)
-    for i in range(len(TEST_GROUP)):
-        for j in range(len(BASELINES)):
-            w, t, l = M[i, j].astype(int)
-            ax.text(j, i, f"{w}/{t}/{l}", ha="center", va="center", fontsize=8)
-    ax.set_xlabel("baseline")
-    ax.set_ylabel("metaphor-based algorithm")
-    ax.grid(False)
-    fig.colorbar(im, ax=ax, label="net wins (win - loss)")
-    fig.savefig(path)
-    plt.close(fig)
-
-
-def fig_tuning(dmain, dtuned, path, problems):
-    a_def = (dmain[dmain["problem"].isin(problems)]
-             .groupby("algorithm")["gap"].mean())
-    a_tun = (dtuned[dtuned["problem"].isin(problems)]
-             .groupby("algorithm")["gap"].mean())
-    fig, ax = plt.subplots(figsize=(6.0, 4.0))
-    for i, a in enumerate(ORDER):
-        y0, y1 = max(a_def[a], 1e-8), max(a_tun[a], 1e-8)
-        ax.plot([0, 1], [y0, y1], LINES[i], marker=MARKERS[i], ms=5, lw=1.2, label=a)
-    ax.set_xticks([0, 1], ["author defaults", "matched-budget tuning"])
-    ax.set_yscale("log")
-    ax.set_ylabel("mean relative gap (held-out problems)")
-    ax.set_xlim(-0.15, 1.5)
-    ax.legend(ncol=2, fontsize=8, loc="center right")
-    fig.savefig(path)
-    plt.close(fig)
-
-
-def fig_constraint(dcons_static, dcons_eps, dmain, path, problems):
-    schemes = {"Deb rules": dmain, "static penalty": dcons_static,
-               "epsilon-constrained": dcons_eps}
-    vals = {k: [max(v[v["problem"].isin(problems)]
-                    .groupby("algorithm")["gap"].mean()[a], 1e-8) for a in ORDER]
-            for k, v in schemes.items()}
-    x = np.arange(len(ORDER))
-    w = 0.26
-    hatches = ["", "//", ".."]
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
-    for i, (k, v) in enumerate(vals.items()):
-        ax.bar(x + (i - 1) * w, v, w, label=k, hatch=hatches[i],
-               edgecolor="k", linewidth=0.5, color=f"{0.35 + 0.25 * i}")
-    ax.set_yscale("log")
-    ax.set_xticks(x, ORDER, rotation=45, ha="right")
-    ax.set_ylabel("mean relative gap")
-    ax.legend(fontsize=8)
-    fig.savefig(path)
-    plt.close(fig)
-
-
-def fig_box(df, path, problems):
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
-    data = [np.maximum(df[(df["algorithm"] == a) & (df["problem"].isin(problems))]["gap"].values, 1e-12)
-            for a in ORDER]
-    bp = ax.boxplot(data, labels=ORDER, showfliers=True, patch_artist=True,
-                    flierprops=dict(marker="+", ms=3))
-    for i, b in enumerate(bp["boxes"]):
-        b.set_facecolor("0.85" if ORDER[i] in TEST_GROUP else "0.6")
-    ax.set_yscale("log")
-    ax.set_ylabel("relative gap to published best")
-    ax.set_xticklabels(ORDER, rotation=45, ha="right")
-    fig.savefig(path)
-    plt.close(fig)
-
-
+# ------------------------------------------------------------------ main
 def main():
-    dmain = load("main")
-    dtuned = load("tuned")
-    heldout = [p for p in dmain["problem"].unique() if p not in TRAIN_PROBLEMS]
-    allp = list(dmain["problem"].unique())
+    out = {}
+    main_df = load_tag("main")
+    ref = Ref(main_df)
+    main_df["ngap"] = ref.ngap(main_df)
+    out["rs_median_ref"] = ref.med
+    out["rs_reference_fallback_problems"] = ref.fallback
+    out["rs_feasible_share"] = ref.rs_feasible_share
 
-    summary_table(dmain).to_csv(f"{OUT}/table_summary_default.csv", index=False)
-    summary_table(dtuned).to_csv(f"{OUT}/table_summary_tuned.csv", index=False)
+    # ---- admission check 2: nothing beats the published optimum -----------
+    allrows = [main_df]
+    for tag in glob.glob(os.path.join(RES, "*", "")):
+        t = os.path.basename(os.path.dirname(tag))
+        if t not in ("main", "tables", "") and not t.startswith("tune"):   # tune* hold tuner state, not runs
+            d = load_tag(t)
+            if len(d):
+                allrows.append(d)
+    A = pd.concat(allrows)
+    A = A[A.feasible & (A.violation <= 1e-8)]
+    adm = []
+    for pn in PNAMES:
+        fs = FSTAR[pn]
+        best = float(A[A.problem == pn].best_f.min())
+        beat = (fs - best) / max(abs(fs), 1e-12)
+        adm.append(dict(problem=pn, published=fs, best_found=best, rel_beat=float(beat),
+                        n_feasible=int((A.problem == pn).sum())))
+    out["admission"] = adm
+    pd.DataFrame(adm).to_csv(f"{TAB}/admission.csv", index=False)
 
-    M, stat, p, ranks, cd = friedman_nemenyi(dmain, allp)
-    Mh, stath, ph, ranksh, cdh = friedman_nemenyi(dmain, heldout)
-    R = pairwise_wilcoxon(dmain, allp)
-    R.to_csv(f"{OUT}/table_wilcoxon.csv", index=False)
+    # ---- core comparison -------------------------------------------------
+    core = main_df[main_df.algorithm.isin(CORE) & (main_df.run < 51)]
+    M = med_matrix(core, CORE, PNAMES)
+    M.to_csv(f"{TAB}/median_ngap_core.csv")
+    fr = friedman(M)
+    fr["ci"] = boot_rank_ci(M)
+    out["friedman_core"] = fr
 
-    res = dict(
-        friedman_all=dict(stat=float(stat), p=float(p), cd=float(cd),
-                          ranks=ranks.to_dict(), n_problems=len(allp)),
-        friedman_heldout=dict(stat=float(stath), p=float(ph), cd=float(cdh),
-                              ranks=ranksh.to_dict(), n_problems=len(heldout)),
-        feasibility=dmain.groupby("algorithm")["feasible"].mean().to_dict(),
-        mean_gap_default=dmain.groupby("algorithm")["gap"].mean().to_dict(),
-        mean_gap_tuned=dtuned.groupby("algorithm")["gap"].mean().to_dict(),
-        wtl={a: R[R["test"] == a]["outcome"].value_counts().to_dict() for a in TEST_GROUP},
-    )
+    # Demsar-style signed-rank across problems on per-problem medians, Holm
+    srecs = []
+    for a in METAPHOR:
+        for b in BASELINES:
+            d = M[a] - M[b]
+            try:
+                pv = float(stats.wilcoxon(M[a], M[b]).pvalue) if np.any(d != 0) else 1.0
+            except ValueError:
+                pv = 1.0
+            srecs.append(dict(test=a, base=b, p=pv, n_better=int((d < 0).sum()),
+                              n_worse=int((d > 0).sum())))
+    S = pd.DataFrame(srecs)
+    S["p_holm"] = holm(S.p.values)
+    S.to_csv(f"{TAB}/signed_rank_across_problems.csv", index=False)
+    out["signed_rank"] = dict(
+        n_significant_losses=int(((S.p_holm < 0.05) & (S.n_worse > S.n_better)).sum()),
+        n_significant_wins=int(((S.p_holm < 0.05) & (S.n_better > S.n_worse)).sum()),
+        n_tests=len(S))
 
-    fig_cd(ranks, cd, f"{FIG}/fig2_critical_difference.png")
-    fig_ecdf(dmain, f"{FIG}/fig3_ecdf.png")
-    fig_convergence(dmain, f"{FIG}/fig4_convergence.png",
-                    ["WeldedBeam", "SpeedReducer", "PressureVessel", "TensionSpring"])
-    fig_wtl(R, f"{FIG}/fig5_win_tie_loss.png")
-    fig_tuning(dmain, dtuned, f"{FIG}/fig6_tuning.png", heldout)
-    fig_box(dmain, f"{FIG}/fig8_boxplot.png", allp)
+    P = paired_tests(core, METAPHOR, BASELINES, PNAMES)
+    P.to_csv(f"{TAB}/paired_wilcoxon_core.csv", index=False)
+    out["wtl_all_baselines"] = wtl(P)
+    out["wtl_vs_baseline"] = {b: wtl(P[P.base == b]) for b in BASELINES}
+    out["wtl_by_algorithm"] = {a: wtl(P[P.test == a]) for a in METAPHOR}
+    out["median_A12_baseline_better"] = float(P.A12_base_better.median())
+    top3 = ["DE", "LSHADE", "CMAES"]
+    out["wtl_vs_top3"] = wtl(P[P.base.isin(top3)])
+    # excluding random search from the baseline set
+    out["wtl_excl_RS"] = wtl(P[P.base != "RS"])
 
-    if os.path.exists(f"{OUT}/cons_static.json"):
-        ds = load("cons", "static")
-        de = load("cons", "eps")
-        cp = list(ds["problem"].unique())
-        fig_constraint(ds, de, dmain, f"{FIG}/fig7_constraint_scheme.png", cp)
-        res["constraint_scheme"] = dict(
-            deb=dmain[dmain["problem"].isin(cp)].groupby("algorithm")["gap"].mean().to_dict(),
-            static=ds.groupby("algorithm")["gap"].mean().to_dict(),
-            eps=de.groupby("algorithm")["gap"].mean().to_dict())
-        Ms, _, _, rs, _ = friedman_nemenyi(ds, cp)
-        Me, _, _, re_, _ = friedman_nemenyi(de, cp)
-        Md, _, _, rd, _ = friedman_nemenyi(dmain[dmain["problem"].isin(cp)], cp)
-        res["rank_by_scheme"] = dict(deb=rd.to_dict(), static=rs.to_dict(), eps=re_.to_dict())
+    # ---- robustness of the core ranking to the normalisation ----------------
+    # GearTrain's random-search scale is ~1e-9, so its gaps are dominated by clipping; the four
+    # fallback problems use |f*| as the scale. Recompute the ranking without each group.
+    def ranks_without(drop):
+        keep = [p for p in PNAMES if p not in drop]
+        r = friedman(M.loc[keep])
+        return dict(n=len(keep), chi2=r["chi2"], cd=r["cd"], ranks=r["ranks"])
+    out["robust_no_geartrain"] = ranks_without(["GearTrain"])
+    out["robust_no_fallback"] = ranks_without(ref.fallback)
+    out["robust_no_geartrain_no_fallback"] = ranks_without(["GearTrain"] + ref.fallback)
+    base_order = list(fr["ranks"])
+    out["robust_rank_order_kendall_tau"] = {
+        k: float(stats.kendalltau([fr["ranks"][a] for a in CORE], [out[k]["ranks"][a] for a in CORE])[0])
+        for k in ("robust_no_geartrain", "robust_no_fallback", "robust_no_geartrain_no_fallback")}
+    pt = paired_tests(core, METAPHOR, BASELINES, [p for p in PNAMES if p != "GearTrain"])
+    out["robust_wtl_no_geartrain"] = wtl(pt)
 
-    json.dump(res, open(f"{OUT}/analysis.json", "w"), indent=2, default=float)
-    print(json.dumps(res, indent=2, default=float)[:4000])
+    sub = core[core.algorithm.isin(CORE)]
+    hit = (sub.assign(h=(sub.ngap <= 1e-4)).groupby("algorithm")
+           .agg(hit=("h", "mean"), feas=("feasible", "mean")))
+    out["hit_rate"] = hit["hit"].to_dict()
+    out["feas_rate"] = hit["feas"].to_dict()
+    out["median_ngap_overall"] = (core.groupby("algorithm")["ngap"].median()).to_dict()
+
+    # ---- extended algorithm set (31 paired runs) ---------------------------
+    ext_algs = CORE + EXT
+    m31 = main_df[main_df.run < 31]
+    M2 = med_matrix(m31, ext_algs, PNAMES)
+    out["friedman_extended"] = friedman(M2)
+    P2 = paired_tests(m31, EXT, BASELINES, PNAMES, nruns=31)
+    P2.to_csv(f"{TAB}/paired_wilcoxon_ext.csv", index=False)
+    out["wtl_ext_vs_baselines"] = wtl(P2)
+    out["wtl_ext_vs_top3"] = wtl(P2[P2.base.isin(top3)])
+    out["wtl_ext_by_algorithm"] = {a: wtl(P2[P2.test == a]) for a in EXT}
+
+    # ---- implementation sensitivity -----------------------------------------
+    imp = []
+    for a in METAPHOR:
+        recs = paired_tests(m31, [a], ["mp_" + a], PNAMES, nruns=31)
+        recs["alg"] = a
+        imp.append(recs)
+    I = pd.concat(imp)
+    I.to_csv(f"{TAB}/implementation_pairs.csv", index=False)
+    out["impl_pairs"] = {
+        a: dict(ours_better=int(((I.alg == a) & (I.outcome == "win")).sum()),
+                equivalent=int(((I.alg == a) & (I.outcome == "tie")).sum()),
+                twin_better=int(((I.alg == a) & (I.outcome == "loss")).sum()))
+        for a in METAPHOR}
+    out["impl_total"] = dict(ours_better=int((I.outcome == "win").sum()),
+                             equivalent=int((I.outcome == "tie").sum()),
+                             twin_better=int((I.outcome == "loss").sum()), n=len(I))
+    base_alg = CORE[6:]
+    Mt = med_matrix(m31, TWINS + base_alg, PNAMES)
+    out["friedman_twins_baselines"] = friedman(Mt)
+    Mb = med_matrix(m31, METAPHOR + TWINS + base_alg, PNAMES)
+    out["friedman_both_impls"] = friedman(Mb)
+    # oracle: for every algorithm and problem keep the better of the two implementations
+    Mo = pd.DataFrame({a: np.minimum(Mb[a], Mb["mp_" + a]) for a in METAPHOR})
+    for b in base_alg:
+        Mo[b] = Mb[b]
+    out["friedman_oracle_impl"] = friedman(Mo)
+    # paired tests of the twin group against baselines (same protocol as the core)
+    Pt = paired_tests(m31, TWINS, BASELINES, PNAMES, nruns=31)
+    out["wtl_twins_vs_baselines"] = wtl(Pt)
+    out["wtl_twins_vs_top3"] = wtl(Pt[Pt.base.isin(top3)])
+    # and the in-house group on the same 31 runs, for like-for-like comparison
+    Po = paired_tests(m31, METAPHOR, BASELINES, PNAMES, nruns=31)
+    out["wtl_ours_vs_baselines_31"] = wtl(Po)
+    out["wtl_ours_vs_top3_31"] = wtl(Po[Po.base.isin(top3)])
+
+    # ---- tuning ---------------------------------------------------------------
+    tun = {}
+    for n_init in (32, 128):
+        d = load_tag(f"tuned{n_init}")
+        if not len(d):
+            continue
+        d["ngap"] = ref.ngap(d)
+        tun[n_init] = d
+    if tun:
+        dflt = main_df[main_df.algorithm.isin(CORE)]
+        tab = {}
+        for name, d in [("default", dflt)] + [(f"tuned{k}", v) for k, v in tun.items()]:
+            tab[name] = {
+                "heldout": med_matrix(d, CORE, HELDOUT, nruns=31).mean(0).to_dict(),
+                "train": med_matrix(d, CORE, TRAIN, nruns=31).mean(0).to_dict()}
+        out["tuning_mean_median_ngap"] = tab
+        for k, d in tun.items():
+            Mh = med_matrix(d, CORE, HELDOUT, nruns=31)
+            out[f"friedman_tuned{k}_heldout"] = friedman(Mh)
+            Pk = paired_tests(d, METAPHOR, BASELINES, HELDOUT, nruns=31)
+            out[f"wtl_tuned{k}_heldout"] = wtl(Pk)
+            Pk.to_csv(f"{TAB}/paired_wilcoxon_tuned{k}.csv", index=False)
+            out[f"wtl_tuned{k}_vs_top3"] = wtl(Pk[Pk.base.isin(top3)])
+        Md = med_matrix(dflt, CORE, HELDOUT, nruns=31)
+        out["friedman_default_heldout"] = friedman(Md)
+        # per-algorithm paired effect of tuning (held-out): default vs tuned
+        eff = {}
+        for k, d in tun.items():
+            rows = []
+            for a in CORE[:-1]:
+                x = dflt[(dflt.algorithm == a) & dflt.problem.isin(HELDOUT) & (dflt.run < 31)]
+                y = d[(d.algorithm == a) & d.problem.isin(HELDOUT) & (d.run < 31)]
+                mx = x.groupby("problem").ngap.median()
+                my = y.groupby("problem").ngap.median()
+                better = int((my < mx).sum()); worse = int((my > mx).sum())
+                try:
+                    pv = float(stats.wilcoxon(mx, my).pvalue)
+                except ValueError:
+                    pv = 1.0
+                rows.append(dict(alg=a, improved=better, worsened=worse, p=pv))
+            eff[k] = rows
+        out["tuning_effect"] = eff
+
+    # ---- constraint-handling schemes -------------------------------------------
+    cons = {"deb": main_df[main_df.algorithm.isin(CORE)]}
+    for sc in ("static", "eps"):
+        d = load_tag(f"cons_{sc}")
+        if len(d):
+            d["ngap"] = ref.ngap(d)
+            cons[sc] = d
+    if len(cons) > 1:
+        rk = {}
+        for sc, d in cons.items():
+            Ms = med_matrix(d, CORE, PNAMES, nruns=31)
+            f = friedman(Ms)
+            rk[sc] = f
+            if sc != "deb":
+                Ps = paired_tests(d, METAPHOR, BASELINES, PNAMES, nruns=31)
+                out[f"wtl_cons_{sc}"] = wtl(Ps)
+                out[f"wtl_cons_{sc}_vs_top3"] = wtl(Ps[Ps.base.isin(top3)])
+        out["friedman_schemes"] = rk
+        sc_names = list(rk)
+        tau = {}
+        for a, b in itertools.combinations(sc_names, 2):
+            ra = [rk[a]["ranks"][x] for x in CORE]
+            rb = [rk[b]["ranks"][x] for x in CORE]
+            tau[f"{a}~{b}"] = float(stats.kendalltau(ra, rb).statistic)
+        out["scheme_kendall_tau"] = tau
+
+    # ---- budget -------------------------------------------------------------------
+    bud = {15000: main_df[main_df.algorithm.isin(CORE)]}
+    for b in (5000, 50000, 150000):
+        d = load_tag(f"budget{b}")
+        if len(d):
+            d["ngap"] = ref.ngap(d)
+            bud[b] = d
+    if len(bud) > 1:
+        rk = {}
+        for b, d in sorted(bud.items()):
+            Mbud = med_matrix(d, CORE, PNAMES, nruns=15)
+            rk[b] = friedman(Mbud)
+            Pb = paired_tests(d, METAPHOR, BASELINES, PNAMES, nruns=15)
+            rk[b]["wtl"] = wtl(Pb)
+            rk[b]["wtl_vs_top3"] = wtl(Pb[Pb.base.isin(top3)])
+        out["friedman_budgets"] = {str(k): v for k, v in rk.items()}
+        ks = sorted(rk)
+        out["budget_kendall_tau"] = {
+            f"{a}~{b}": float(stats.kendalltau([rk[a]["ranks"][x] for x in CORE],
+                                               [rk[b]["ranks"][x] for x in CORE]).statistic)
+            for a, b in itertools.combinations(ks, 2)}
+
+    json.dump(out, open(f"{RES}/analysis.json", "w"), indent=1, default=float)
+    print("wrote analysis.json")
+    return out
 
 
 if __name__ == "__main__":

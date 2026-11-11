@@ -1,0 +1,25 @@
+{
+ "Zp1": {
+  "optimum": 0.2352424579008037,
+  "argmin": [
+   70.0,
+   90.0,
+   1.0,
+   964.0,
+   2.0
+  ],
+  "n_feasible_grid_points": 5268798
+ },
+ "Z": {
+  "optimum": 0.15682830526720248,
+  "argmin": [
+   70.0,
+   90.0,
+   1.0,
+   964.0,
+   2.0
+  ],
+  "n_feasible_grid_points": 5268798
+ },
+ "note": "Under the original (Z+1) mass the exhaustive optimum equals the published 0.2352424; the 'Z' expression gives 2/3 of that value, i.e. the apparent improvement in v1 was a transcription error, not a better solution."
+}

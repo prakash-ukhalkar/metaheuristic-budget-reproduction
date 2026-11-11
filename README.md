@@ -1,180 +1,104 @@
-# Budget-Controlled Reproduction Study of Nature-Inspired Metaheuristics
+# Nature-inspired metaheuristics under matched budgets (v2)
 
-[![Author](https://img.shields.io/badge/author-Prakash%20Ukhalkar-blue?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
-[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Metaphor-based algorithms](https://img.shields.io/badge/metaphor--based-GWO%20%7C%20WOA%20%7C%20SCA%20%7C%20SSA%20%7C%20HHO%20%7C%20AOA-orange)
-![Baselines](https://img.shields.io/badge/baselines-DE%20%7C%20PSO%20%7C%20L--SHADE%20%7C%20CMA--ES%20%7C%20RS-teal)
-![Problems](https://img.shields.io/badge/problems-8%20constrained%20engineering%20design-9cf)
-![Runs](https://img.shields.io/badge/runs-51%20seeded%20per%20pair-9cf)
-![Budget](https://img.shields.io/badge/eval%20budget-5k%20%7C%2015k%20%7C%2050k%20FEs-9cf)
-
-A reproduction study comparing six metaphor-based metaheuristics against five established
-baselines on constrained engineering design problems, under matched evaluation budgets, matched
-tuning effort, and identical constraint handling.
-
-**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
-— Pimpri Chinchwad College of Engineering, Pune, India.
+Benchmarking study of six recent nature-inspired optimisers (GWO, WOA, SCA, SSA, HHO, AOA) against five
+reference algorithms (DE, PSO, L-SHADE, CMA-ES, random search) on 19 constrained problems, with every
+algorithm run through one shared evaluator so that the evaluation budget, constraint handling and random
+seeds are identical. Third-party (mealpy) versions of the same algorithms and six further algorithms
+(MFO, FFA, BA, EO, SMA, MPA) are run through the same evaluator to separate algorithm effects from
+implementation effects.
 
 ## Contents
 
-- [Overview](#overview)
-- [Key results](#key-results)
-- [Repository layout](#repository-layout)
-- [Installation](#installation)
-- [Reproducing the results](#reproducing-the-results)
-- [Notebooks](#notebooks)
-- [Data availability](#data-availability)
-- [Status and known limitations](#status-and-known-limitations)
-- [Citation](#citation)
-- [License](#license)
-
-## Overview
-
-Metaphor-based metaheuristics (e.g. algorithms inspired by animal behaviour, natural phenomena,
-or social processes) are frequently reported to outperform established optimisation baselines.
-This study re-evaluates that claim under conditions designed to remove the most common sources of
-an unfair comparison:
-
-- **Matched evaluation budget** — every algorithm is metered through the same `Evaluator` object
-  (15,000 function evaluations, 51 seeded runs per algorithm-problem pair).
-- **Matched tuning effort** — hyperparameters are tuned by an identical successive-halving racing
-  protocol per algorithm, not hand-picked per method.
-- **Paired seeding** — run `r` on problem `j` uses the same seed for every algorithm, enabling
-  paired statistical tests.
-- **Multiple constraint-handling schemes** — Deb feasibility rules, static penalty, and
-  epsilon-constrained, to check that conclusions are not an artefact of one scheme.
-- **Independent fidelity check** — the six metaphor-based implementations are cross-validated
-  against an independent third-party library (`mealpy`).
-
-Six metaphor-based algorithms (GWO, WOA, SCA, SSA, HHO, AOA) are compared against five baselines
-(DE, PSO, L-SHADE, CMA-ES, random search) on nine constrained engineering design problems.
-
-## Key results
-
-Full statistics are in [results/analysis.json](results/analysis.json) and
-[results/headline_v2.json](results/headline_v2.json); figures are in [figures/](figures/). Both
-are the current, canonical outputs of `src/analysis.py` and `src/extra_analysis.py` respectively,
-and match every number reported in the manuscript.
-
-- **Friedman test across the 8 admitted problems**: χ² = 50.97, p = 1.8 × 10⁻⁷ — highly
-  significant differences among the 11 algorithms.
-- **Mean rank, all problems (lower is better)**: DE (2.13) < L-SHADE (2.38) < CMA-ES (3.06) <
-  GWO (4.5) < WOA (5.88) < PSO (6.5) < SCA (7.25) < SSA (7.69) < AOA (8.25) < RS (8.63) <
-  HHO (9.75). The three top-ranked algorithms are established baselines, not metaphor-based
-  methods.
-- **Paired Wilcoxon (Holm-corrected), metaphor-based vs. baselines**: 150 losses, 55 ties, only
-  35 wins out of 240 comparisons for the metaphor-based group (median A₁₂ = 0.92).
-- **Ranking is stable** across three constraint-handling schemes and three evaluation budgets
-  (5,000 / 15,000 / 50,000).
-- **Implementation fidelity**: no statistically significant difference from an independent
-  (`mealpy`) implementation on 19 of 48 algorithm-problem pairs; overall median relative
-  difference in reported objective values is 0.06.
-
-## Repository layout
-
-```
-src/                    Python source (see below)
-notebooks/              Annotated Jupyter notebook version of every script in src/
-results/                Raw run data (JSON), summary tables (CSV), aggregated analysis (JSON)
-figures/                Manuscript figures (fig1-fig8), PNG + PDF
-```
-
-The manuscript source is submitted directly to the journal and is not included in this
-repository.
-
-| Script | Purpose |
+| Path | Purpose |
 |---|---|
-| `src/problems.py` | 9 constrained design problems, vectorised, with repair operators |
-| `src/verify_problems.py` | Checks every problem against its published optimum |
-| `src/algorithms.py` | 11 algorithms + shared `Evaluator` (budget metering, 3 constraint-handling schemes, anytime traces) |
-| `src/runner.py` | Experiment driver: `tune` \| `main` \| `tuned` \| `cons` |
-| `src/fidelity.py` | Cross-validation against the independent `mealpy` library |
-| `src/analysis.py` | Friedman/Nemenyi, paired Wilcoxon + Holm, A₁₂, early figure set |
-| `src/extra_analysis.py` | Headline statistics for the revised manuscript |
-| `src/make_figures.py` | Final, manuscript-numbered figures (1-8) |
-| `src/figures_extra.py` | Standalone regeneration of the design schematic, tuning and boxplot figures |
-| `src/verify_references.py` | Resolves every manuscript reference against the Crossref API |
+| `src/problems.py`, `src/cec_problems.py` | 9 mechanical-design problems and 10 CEC 2006 problems (G01-G04, G06-G10, G12) |
+| `src/algorithms.py` | shared `Evaluator` (budget metering, repair, constraint schemes, anytime trace) and all 23 algorithms |
+| `src/runner.py` | parallel, resumable experiment driver |
+| `src/analysis.py` | statistics: Friedman/Nemenyi, paired Wilcoxon with Holm, A12, bootstrap, rank stability |
+| `src/make_figures.py` | Figures 1-9 (PDF and PNG) |
+| `src/audit_discbrake.py` | exhaustive enumeration of the clutch-brake design space (7.1 million designs) |
+| `src/verify_problems.py` | checks that every problem reproduces its published optimum |
+| `src/timing.py` | per-run computational overhead of each algorithm |
+| `tests/test_core.py` | automated checks of the experimental machinery |
+| `results/` | raw per-job results (JSON), tuned settings, analysis output |
+| `figures/` | final figures |
 
-## Installation
+## Environment
 
-```bash
-pip install -r requirements.txt
+Python 3.13 on Windows 11 (8 cores). Exact versions are pinned in `requirements.txt`.
+
+```
+pip install numpy==2.1.2 scipy==1.14.1 pandas==2.2.3 matplotlib==3.9.2 cma==4.5.0 pytest
+pip install --no-deps mealpy==3.0.3
 ```
 
-Requires `numpy`, `scipy`, `pandas`, `matplotlib`, `cma`, `scikit-posthocs`, and `mealpy` (for the
-fidelity check only). Versions are pinned in `requirements.txt`, except `mealpy`, whose version
-from the original fidelity run is not yet recorded.
+`mealpy` declares `numpy<=1.26` but runs correctly on numpy 2.1.2 for the algorithms used here, so it is
+installed without its dependency pins. Without mealpy the 12 third-party algorithms are unavailable
+and `runner.py main` will fail on them.
 
 ## Reproducing the results
 
-Two admission checks run before any experiment: the published optimum must reproduce, and no
-algorithm may be shown to beat the published value in a short search (both implemented in
-`src/verify_problems.py`).
+All commands are run from `src/`. Every job writes one file under `results/<phase>/` and is skipped if the
+file exists, so any interrupted run can simply be repeated. Set `WORKERS=n` to change the process count
+(default 7).
 
-```bash
-cd src
-python3 verify_problems.py
-python3 runner.py tune && python3 runner.py main \
-  && python3 runner.py tuned && python3 runner.py cons
-python3 fidelity.py
-python3 extra_analysis.py && python3 make_figures.py
+```
+python verify_problems.py          # 19/19 problems reproduce their published optimum
+python runner.py main              # default settings, 23 algorithms x 19 problems (Deb rules)
+python runner.py tune 32           # racing tuner, 32 initial configurations per algorithm
+python runner.py tune 128          # same with 128 (tests whether the tuning budget was enough)
+python runner.py tuned 32          # core algorithms with tuned settings
+python runner.py tuned 128
+python runner.py cons              # static-penalty and epsilon-constrained schemes
+python runner.py budget            # 5,000 / 50,000 / 150,000 evaluations
+python runner.py status            # progress of every phase
+python analysis.py                 # results/analysis.json and results/tables/*.csv
+python make_figures.py             # figures/Figure_*.{pdf,png}
+python timing.py                   # run on an otherwise idle machine
+python audit_discbrake.py          # clutch-brake audit
+python -m pytest ../tests -q       # automated checks
 ```
 
-Set `RESUME=1` to resume a partially completed sweep; results are written after every problem.
+`bash run_rest.sh` chains every phase after `main`. The file `results/ALL_PHASES_COMPLETE` appears when
+all phases are done. A second runner started while one is active waits for the first (file lock).
 
-Seeds are fixed: run `r` on problem `j` uses seed `10000*j + r` for every algorithm, so all
-cross-algorithm comparisons are paired.
+## Protocol in brief
 
-**Configuration used for the reported results**: evaluation budget 15,000; 51 runs per
-algorithm-problem pair; hyperparameters tuned by successive-halving racing (32 configurations
-raced on 3 training problems).
+* **Budget.** 15,000 function evaluations per run. The shared evaluator returns infinity once the budget is
+  spent, so every algorithm, including third-party ones whose own counters overshoot, receives exactly
+  15,000 evaluations (checked by `tests/test_core.py`).
+* **Seeds.** Run `r` on problem index `j` uses seed `10000*j + r` for every algorithm, so comparisons are
+  paired by seed. Tuning seeds start at 777000 and never overlap evaluation seeds.
+* **Runs.** 51 per cell for in-house algorithms and baselines; 31 for the third-party algorithms
+  (about 40 times slower per run); 31 for constraint-scheme sensitivity; 15 for budget sensitivity.
+* **Tuning.** Successive-halving racing on four training problems (PressureVessel, CantileverBeam, G04, G08);
+  the other 15 problems are held out.
+* **Normalised gap.** `(f - f*) / (median_RS - f*)` where `RS` is random search and `f*` the published
+  optimum. 0 means the published optimum was reached, 1 means random search's median, and a run with no
+  feasible solution scores 10. **Where random search is feasible in fewer than half of its runs
+  (G01, G03, G07, G10), the scale falls back to `|f*|`**, a relative error. The rule is fixed in advance
+  and independent of every compared algorithm.
+* **Statistics.** Friedman test on per-problem medians with the Nemenyi critical difference, paired
+  Wilcoxon tests with Holm correction, Vargha-Delaney A12, bootstrap intervals on ranks, Kendall tau for
+  rank stability across schemes and budgets.
 
-## Notebooks
+## Known limitations
 
-An annotated Jupyter notebook is provided for every script in `src/`, under
-[notebooks/](notebooks/), with section-by-section explanations and a findings summary per
-notebook based on the results in this repository. See [notebooks/README.md](notebooks/README.md)
-for the full index and suggested run order. Notebooks reproduce the same code as the
-corresponding `.py` file; no logic was changed in the conversion.
+* Third-party algorithms use 31 runs per cell, against 51 for the others.
+* GearTrain's random-search scale is about 2e-9, so its normalised gap is dominated by clipping at 10;
+  rank-based results are unaffected, but averages of gaps on that problem should be read with care.
+* The tuner is a simple racing method and is weaker than irace; the 32 versus 128 configuration comparison
+  is reported to show how sensitive the conclusions are to it.
+* Results were produced on one machine; timings are indicative only.
 
-## Data availability
+## Clutch-brake correction
 
-All raw run data (`results/*.json`), summary tables (`results/*.csv`) and figures (`figures/`)
-generated for the reported results are included in this repository. The repository will be
-archived on Zenodo prior to submission and the DOI added here and in the manuscript's data
-availability statement.
+An earlier version used mass `pi (ro^2 - ri^2) t Z rho`. The published formulation uses `(Z + 1)`.
+`audit_discbrake.py` enumerates all 7.1 million discrete designs: with `(Z + 1)` the exact optimum is
+0.2352425 at (ri, ro, t, F, Z) = (70, 90, 1, 964, 2), matching the published value, so the earlier
+"improvement" below the published value was a transcription error.
 
-## Status and known limitations
+## Licence and citation
 
-**Completed**:
-- 8-problem suite (1 excluded, see below), dual admission checks per problem
-- 51 runs per algorithm-problem pair
-- Successive-halving racing tuner, identical protocol per algorithm
-- Implementation-fidelity validation against `mealpy` across 48 algorithm-problem pairs
-- Budget sensitivity at 5,000 / 15,000 / 50,000 evaluations
-- Constraint-handling sensitivity across 3 schemes
-- Computational overhead measured; statistical power limitation of Friedman-Nemenyi stated in text
-
-**Excluded**: the multiple-disc clutch brake problem. Feasible solutions ~33% better than its
-published optimum are found readily, indicating the formulation as commonly circulated is
-under-constrained (manuscript Section 4.6).
-
-## Citation
-
-See [CITATION.cff](CITATION.cff). Please cite the associated article once published; until then,
-cite this repository directly.
-
-## License
-
-Released under the [MIT License](LICENSE).
-
----
-
-**Author:** Prakash Ukhalkar ([ORCID: 0000-0002-0452-6574](https://orcid.org/0000-0002-0452-6574))
-— Pimpri Chinchwad College of Engineering, Pune, India
-
-[![Repo](https://img.shields.io/badge/GitHub-metaheuristic--budget--reproduction-181717?logo=github&logoColor=white)](https://github.com/prakash-ukhalkar/metaheuristic-budget-reproduction)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![ORCID](https://img.shields.io/badge/ORCID-0000--0002--0452--6574-a6ce39?logo=orcid&logoColor=white)](https://orcid.org/0000-0002-0452-6574)
+MIT licence (`LICENSE`; the copyright holder line still needs the author's name). Cite the archived release
+once it has a DOI.

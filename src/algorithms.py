@@ -418,9 +418,51 @@ def RS(ev, rng, batch=100):
     return ev.finish()
 
 
+# --------------------------------------------------------------------------
+# Third-party implementations (mealpy), run through the SAME Evaluator.
+#
+# Two roles:
+#   * "twin" implementations (mp_GWO ... mp_AOA): an independent reading of the
+#     same six publications, used to test whether conclusions depend on this
+#     study's transcription (implementation-sensitivity analysis);
+#   * "extension" algorithms (MFO ... MPA): six further metaphor-based methods
+#     included to widen the algorithm sample.  Their only source is mealpy.
+# Because every objective value is obtained through Evaluator, budget and
+# constraint handling are identical to the in-house algorithms: the evaluator
+# returns +inf once the budget is spent, so mealpy's epoch-granular overshoot
+# (its own nfe_counter reads up to ~2x for SSA/HHO) never buys extra evaluations.
+# --------------------------------------------------------------------------
+def _mealpy_classes():
+    from mealpy import (GWO as _GWO, WOA as _WOA, SCA as _SCA, SSA as _SSA, HHO as _HHO,
+                        AOA as _AOA, MFO as _MFO, FFA as _FFA, BA as _BA, EO as _EO,
+                        SMA as _SMA, MPA as _MPA)
+    return {"GWO": _GWO.OriginalGWO, "WOA": _WOA.OriginalWOA, "SCA": _SCA.OriginalSCA,
+            "SSA": _SSA.OriginalSSA, "HHO": _HHO.OriginalHHO, "AOA": _AOA.OriginalAOA,
+            "MFO": _MFO.OriginalMFO, "FFA": _FFA.OriginalFFA, "BA": _BA.OriginalBA,
+            "EO": _EO.OriginalEO, "SMA": _SMA.OriginalSMA, "MPA": _MPA.OriginalMPA}
+
+
+def _make_mealpy(key):
+    def run(ev, rng, pop=30):
+        from mealpy import FloatVar
+        p = ev.p
+        prob = {"obj_func": lambda X: [float(v) for v in ev(np.atleast_2d(X))],
+                "bounds": FloatVar(lb=list(p.lb), ub=list(p.ub)),
+                "minmax": "min", "log_to": None, "mode": "swarm"}
+        seed = int(rng.integers(1, 2 ** 31 - 1))
+        model = _mealpy_classes()[key](epoch=100000, pop_size=int(pop))
+        model.solve(prob, termination={"max_fe": ev.budget}, seed=seed)
+        return ev.finish()
+    run.__name__ = "mp_" + key
+    return run
+
+
 TEST_GROUP = {"GWO": GWO, "WOA": WOA, "SCA": SCA, "SSA": SSA, "HHO": HHO, "AOA": AOA}
 BASELINES = {"DE": DE, "PSO": PSO, "LSHADE": LSHADE, "CMAES": CMAES, "RS": RS}
-ALGORITHMS = {**TEST_GROUP, **BASELINES}
+TWINS = {"mp_" + k: _make_mealpy(k) for k in ("GWO", "WOA", "SCA", "SSA", "HHO", "AOA")}
+EXTENSION = {k: _make_mealpy(k) for k in ("MFO", "FFA", "BA", "EO", "SMA", "MPA")}
+CORE = {**TEST_GROUP, **BASELINES}
+ALGORITHMS = {**CORE, **TWINS, **EXTENSION}
 
 # hyperparameter search spaces for the matched-budget tuner
 SPACES = {
@@ -437,6 +479,9 @@ SPACES = {
     "CMAES": {"sigma_frac": ("float", 0.05, 0.5), "popsize": ("int", 8, 60)},
     "RS": {},
 }
+# the third-party algorithms are run at their library defaults (pop 30) only
+for _k in list(TWINS) + list(EXTENSION):
+    SPACES[_k] = {}
 
 DEFAULTS = {
     "GWO": {"pop": 30}, "WOA": {"pop": 30, "b": 1.0}, "SCA": {"pop": 30, "a": 2.0},
@@ -447,6 +492,8 @@ DEFAULTS = {
     "LSHADE": {"H": 6, "p_best": 0.11},
     "CMAES": {"sigma_frac": 0.3}, "RS": {},
 }
+for _k in list(TWINS) + list(EXTENSION):
+    DEFAULTS[_k] = {"pop": 30}
 
 
 def run_one(alg, problem, budget, seed, params=None, scheme="deb"):

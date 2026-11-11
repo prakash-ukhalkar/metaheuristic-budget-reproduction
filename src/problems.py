@@ -231,7 +231,8 @@ class IBeamDeflection(Problem):
 
 
 class DiscBrake(Problem):
-    """Multiple disc clutch brake. Discrete variables."""
+    """Multiple disc clutch brake (Osyczka 2002). Mass uses (Z+1) discs, as in the original;
+    v1 of this study transcribed Z, which wrongly made the published optimum look beaten."""
     name = "DiscBrake"
     dim = 5
     n_con = 8
@@ -239,8 +240,8 @@ class DiscBrake(Problem):
     ub = np.array([80.0, 110.0, 3.0, 1000.0, 9.0])
     step_idx = {0: 1.0, 1: 1.0, 2: 0.5, 3: 1.0}
     integer_idx = (4,)
-    known_x = np.array([70.0, 90.0, 1.0, 810.0, 3.0])
-    known_f = 0.23524245
+    known_x = np.array([70.0, 90.0, 1.0, 1000.0, 2.0])
+    known_f = 0.2352424
 
     def evaluate(self, X):
         ri, ro, t, F, Z = [X[:, i] for i in range(5)]
@@ -248,7 +249,7 @@ class DiscBrake(Problem):
         s, delta, Lmax, mu, pmax = 1.5, 0.5, 30.0, 0.6, 1.0
         DR = 20.0   # minimum radial width ri to ro (mm)
         rho = 0.0000078
-        f = PI * (ro ** 2 - ri ** 2) * t * Z * rho
+        f = PI * (ro ** 2 - ri ** 2) * t * (Z + 1.0) * rho
         Rsr = 2.0 / 3.0 * (ro ** 3 - ri ** 3) / (ro ** 2 - ri ** 2)
         A = PI * (ro ** 2 - ri ** 2)
         prz = F / A
@@ -272,4 +273,6 @@ PROBLEMS = [
     DiscBrake(),
 ]
 
+from cec_problems import CEC_PROBLEMS   # noqa: E402
+PROBLEMS = PROBLEMS + CEC_PROBLEMS
 PROBLEM_MAP = {p.name: p for p in PROBLEMS}
